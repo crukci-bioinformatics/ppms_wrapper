@@ -9,6 +9,8 @@ This plugin provides the following capabilities to a Redmine installation:
 1. Commit billing records reflecting said cross-charging to PPMS on demand.
 1. Mark time logs as "charged", after which they cannot be changed.
 1. Store (and periodically update) researchers' Raven IDs.
+1. Might as well store a list of legal cost codes as well, to save checking
+   PPMS on every save.
 
 The plugin stores Raven ids (and corresponding email addresses), as well as a
 list of time logs that have been billed, to ensure that they are not changed
@@ -22,3 +24,9 @@ after billing, and to ensure that they are not billed more than once.
 1. There is only one service the group provides, so we don't need to ask
    which service, when billing.  But is this future-proof?  Might we someday
    have different services available?
+1. When (and why) do we refresh the list of known Raven IDs and cost codes?
+   Maybe it's easiest to do it on demand: when an issue is saved, or time is
+   logged, and we don't have an entry for this cost code or a mapping from
+   this email address to a Raven ID, then refresh, and check whether the
+   mapping now exists.  If so, great.  Otherwise block the operation and
+   complain about the cost code or email address.
