@@ -37,6 +37,6 @@ after billing, and to ensure that they are not billed more than once.
    CSV-formatted data only; others return either CSV or JSON.  Some return
    slightly odd things:
    1. `getusers` returns the user list HTML-encoded, so for example a single
-      quote "'" is encoded as "&#39;".  Other calls do not seem to use this
+      quote "'" is encoded as "&amp;#39;".  Other calls do not seem to use this
       encoding.  Also, this call returns a bare list of logins, LF-separated,
       with no header.
