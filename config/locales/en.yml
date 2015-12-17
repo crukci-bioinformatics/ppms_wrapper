@@ -1,3 +1,4 @@
 # English strings go here for Rails i18n
 en:
-  # my_label: "My label"
+  settings_ppms_log_file_label: "Log file"
+  settings_ppms_log_file_descr: "Absolute path to log file where PPMS messages will be written"

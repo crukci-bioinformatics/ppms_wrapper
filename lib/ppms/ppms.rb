@@ -27,8 +27,6 @@ module PPMS
       @host = host
       @key = apikey
       @uri = URI("https://#{@host}/pumapi/")
-      $log = Logger.new(STDERR)
-      $log.level = Logger::DEBUG
     end
 
     def makeRequest(req,tag,verbose)
@@ -37,13 +35,13 @@ module PPMS
         result = conn.request(req)
       end
       if result.nil? or !result.is_a?(Net::HTTPResponse)
-        $log.error("Failed #{tag}: response not a 'Net::HTTPResponse' object (#{result.class})") if verbose
+        $ppmslog.error("Failed #{tag}: response not a 'Net::HTTPResponse' object (#{result.class})") if verbose
         return nil
       elsif result.code != "200"
-        $log.error("Failed #{tag}: response code == '#{result.code}'") if verbose
+        $ppmslog.error("Failed #{tag}: response code == '#{result.code}'") if verbose
         return nil
       elsif result.body.strip == "error: request not authorized"
-        $log.error("Failed #{tag}: bad API key '#{@key}'") if verbose
+        $ppmslog.error("Failed #{tag}: bad API key '#{@key}'") if verbose
         return nil
       end
       return result
@@ -62,11 +60,12 @@ module PPMS
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
       result = makeRequest(req,__method__,verbose)
+      $ppmslog.error("got NIL") if result.nil?
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
       rescue JSON::ParserError
-        $log.error("Failed getUser: userid not found '#{id}'") if verbose
+        $ppmslog.error("Failed getUser: userid not found '#{id}'") if verbose
         data = nil
       end
       return data
@@ -80,7 +79,7 @@ module PPMS
       begin
         data = result.body.split
       rescue
-        $log.error("Failed listUsers: result = '#{result.body}'") if verbose
+        $ppmslog.error("Failed listUsers: result = '#{result.body}'") if verbose
         data = nil
       end
       return data
@@ -88,7 +87,7 @@ module PPMS
 
     def getServices(core=7,verbose=false)
       if core.nil?
-        $log.error("#{__method__}: 'core' parameter must not be nil.") if verbose
+        $ppmslog.error("#{__method__}: 'core' parameter must not be nil.") if verbose
         return nil
       end
       req = Net::HTTP::Post.new(@uri)
@@ -106,10 +105,11 @@ module PPMS
 
     def getProjects(verbose=false)
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getprojects")
+      req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
-      return result.body
+      data = JSON.parse(result.body)
+      return data
     end
 
     def getGroups(verbose=false)

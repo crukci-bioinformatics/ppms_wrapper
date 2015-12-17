@@ -8,7 +8,7 @@ class PPMSTest < Minitest::Test
   @@test_user = "gordon.brown"
   @@test_bad_user = "zaphod.beeblebrox"
 
-  @@verbose = false
+  @@verbose = true
 
   def test_connectivity
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
