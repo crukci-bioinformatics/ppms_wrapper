@@ -30,6 +30,13 @@ after billing, and to ensure that they are not billed more than once.
    this email address to a Raven ID, then refresh, and check whether the
    mapping now exists.  If so, great.  Otherwise block the operation and
    complain about the cost code or email address.
+1. We do not want to hard-code an API key (especially since the code is hosted
+   on a public GitHub repository).  But we don't want to have to supply it for
+   each operation, either.  Maybe a config file on disk somewhere (outside of
+   the HTTP hierarchy)?
+1. How do we prevent saving of an invalid cost code or email address?  I guess
+   we allow the issue as a whole to be saved, but reject the saving of the
+   custom value, and post a message to the user.
 
 ## Notes
 
