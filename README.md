@@ -52,16 +52,18 @@ after billing, and to ensure that they are not billed more than once.
       quote "'" is encoded as "&amp;#39;".  Other calls do not seem to use this
       encoding.  Also, this call returns a bare list of logins, LF-separated,
       with no header.  (Similar for `getprojects`.)
+   1. `getorders` returns a CSV-formatted string with the first row just the
+      word "Orders", and the actual headers on the second row.
 
 1. The API doc does not provide the parameter for "getorderlines".  The correct
    parameter is "orderref".
 
-1. `getorders` returns a CSV-formatted string with the first row just the
-   word "Orders", and the actual headers on the second row.
-
 #### Rake Tasks
 
-1. Refresh list of email addresses with associated Raven IDs
-1. Refresh list of cost codes ("projects") with name, code, id
+1. `rake redmine:ppms_wrapper:refresh_raven`: refresh list of email addresses
+   with associated Raven IDs.  To do: add option to re-check all email
+   addresses.
+1. `rake redmine:ppms_wrapper:refresh_cost_codes`: refresh list of cost codes
+   ("projects") with name, code, id.
 1. Test format of each data type (group, list of groups, project, list of
-   projects, etc). (to be implemented)
+   projects, etc).  To do: implement.
