@@ -1,4 +1,4 @@
-# PPMS Wrapper
+## PPMS Wrapper
 
 This plugin provides the following capabilities to a Redmine installation:
 
@@ -16,7 +16,7 @@ The plugin stores Raven ids (and corresponding email addresses), as well as a
 list of time logs that have been billed, to ensure that they are not changed
 after billing, and to ensure that they are not billed more than once.
 
-## Considerations
+#### Considerations
 
 1. Linking Raven IDs to email addresses: currently we store researcher emails,
    but what happens if the researcher's preferred email address is not the one
@@ -37,8 +37,13 @@ after billing, and to ensure that they are not billed more than once.
 1. How do we prevent saving of an invalid cost code or email address?  I guess
    we allow the issue as a whole to be saved, but reject the saving of the
    custom value, and post a message to the user.
+1. Refreshing the email -- Raven id mapping list currently does not check
+   if the email address in PPMS has changed.  Doing so would require separate
+   REST calls for each Raven ID (i.e. several hundred calls).  But it's possible
+   that they might change.  Maybe the Rake task should check (run manually)
+   but the automatic refresh shouldn't.
 
-## Notes
+#### Notes
 
 1. Data come back from PPMS in various formats.  Some API calls return
    CSV-formatted data only; others return either CSV or JSON.  Some return
@@ -46,4 +51,17 @@ after billing, and to ensure that they are not billed more than once.
    1. `getusers` returns the user list HTML-encoded, so for example a single
       quote "'" is encoded as "&amp;#39;".  Other calls do not seem to use this
       encoding.  Also, this call returns a bare list of logins, LF-separated,
-      with no header.
+      with no header.  (Similar for `getprojects`.)
+
+1. The API doc does not provide the parameter for "getorderlines".  The correct
+   parameter is "orderref".
+
+1. `getorders` returns a CSV-formatted string with the first row just the
+   word "Orders", and the actual headers on the second row.
+
+#### Rake Tasks
+
+1. Refresh list of email addresses with associated Raven IDs
+1. Refresh list of cost codes ("projects") with name, code, id
+1. Test format of each data type (group, list of groups, project, list of
+   projects, etc). (to be implemented)

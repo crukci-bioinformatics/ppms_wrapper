@@ -8,7 +8,7 @@ class PPMSTest < Minitest::Test
   @@test_user = "gordon.brown"
   @@test_bad_user = "zaphod.beeblebrox"
 
-  @@verbose = true
+  @@verbose = false
 
   def test_connectivity
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
@@ -76,7 +76,16 @@ class PPMSTest < Minitest::Test
 
   def test_get_orders
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
-    data = ppms.getOrder(7)
+    data = ppms.getOrders(verbose=@@verbose)
+    assert(!data.nil?)
+    assert(data.include? '49')
+  end
+
+  def test_get_order
+    ppms = PPMS::PPMS.new(@@test_url,@@test_key)
+    d1 = ppms.getOrders(verbose=@@verbose)
+    id = d1.keys()[0]
+    data = ppms.getOrder(id,verbose=@@verbose)
     assert(!data.nil?)
   end
 
@@ -84,12 +93,24 @@ class PPMSTest < Minitest::Test
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
     data = ppms.getProjects()
     assert(!data.nil?)
+    plist = data.select{|p| p['Bcode'] == 'SWAG/001'}
+    assert(plist.length == 1)
   end
 
   def test_get_groups
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
     data = ppms.getGroups()
     assert(!data.nil?)
+    assert(data.include? 'Bioinformatics')
+  end
+
+  def test_get_group
+    ppms = PPMS::PPMS.new(@@test_url,@@test_key)
+    data = ppms.getGroup('Bioinformatics')
+    assert(!data.nil?)
+    assert(data.include? 'Bioinformatics')
+    h = data['Bioinformatics']
+    assert(h['unitname'] == 'Bioinformatics')
   end
 
 end

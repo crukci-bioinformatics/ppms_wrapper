@@ -6,13 +6,13 @@ require 'csv'
 module PPMS
   class PPMS
 
-    def csv2dict(data,indexKey)
+    def csv2dict(data,indexKey,headerRow=0)
       rows = ::CSV.parse(data)
-      index = rows[0].find_index(indexKey)
-      inames = rows[0]
+      index = rows[headerRow].find_index(indexKey)
+      inames = rows[headerRow]
       data = {}
       rows.each_index do |i|
-        next if i == 0
+        next if i <= headerRow
         rdata = {}
         row = rows[i]
         row.each_index do |col|
@@ -60,7 +60,6 @@ module PPMS
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
       result = makeRequest(req,__method__,verbose)
-      $ppmslog.error("got NIL") if result.nil?
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
@@ -117,23 +116,55 @@ module PPMS
       req.set_form_data("apikey" => @key, "action" => "getgroups")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
-      return result.body
+      begin
+        data = result.body.split
+      rescue
+        $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
+        data = nil
+      end
+      return data
     end
 
-    def getGroups(verbose=false)
+    def getGroup(id,verbose=false)
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getgroups")
+      req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => id)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
-      return result.body
+      begin
+        data = csv2dict(result.body,"unitlogin")
+      rescue
+        $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
+        data = nil
+      end
+      return data
     end
 
-    def getOrder(id,verbose=false)
+    def getOrders(verbose=false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getorders")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
-      return result.body
+      begin
+        data = csv2dict(result.body,"Order ref.",headerRow=1)
+      rescue
+        $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
+        data = nil
+      end
+      return data
+    end
+
+    def getOrder(id,verbose=false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key, "action" => "getorderlines", "orderref" => id)
+      result = makeRequest(req,__method__,verbose)
+      return result if result.nil?
+      begin
+        data = csv2dict(result.body,"Order ID",headerRow=0)
+      rescue
+        $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
+        data = nil
+      end
+      return data
     end
   end
 end
