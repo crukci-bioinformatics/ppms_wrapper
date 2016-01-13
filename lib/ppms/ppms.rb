@@ -23,9 +23,9 @@ module PPMS
       return data
     end
 
-    def initialize(host,apikey)
-      @host = host
-      @key = apikey
+    def initialize()
+      @host = Setting.plugin_ppms['api_url']
+      @key = Setting.plugin_ppms['api_key']
       @uri = URI("https://#{@host}/pumapi/")
     end
 

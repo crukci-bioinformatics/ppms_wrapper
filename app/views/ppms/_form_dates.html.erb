@@ -1,0 +1,23 @@
+<div id="ppms_date_form">
+  <%= form_for(:ppms, method: 'put') do %>
+  <fieldset>
+    <div><div><%= radio_button_tag :date_type, '1', (@params['date_type']=='1' || (! @params.has_key?('date_type'))) %>
+         <label class="noblock" for=:date_type_1><%= l(:ppms_report_date_type_fixed) %></label></div>
+         <%= select_tag(:period_type, options_for_select(@periods,@params['period_type'])) %>
+    </div>
+    <div><%= radio_button_tag :date_type, '2', @params['date_type']=='2' %>
+         <label class="noblock" for=:date_type_2><%= l(:ppms_report_date_type_open) %></label>
+         <label for=:report_date_from><%= l(:ppms_report_date_from) %></label>
+         <%= text_field_tag :report_date_from, value=@params['report_date_from'],  options={size: 10} %><%= calendar_for(:report_date_from) %>
+         <label for='report_date_to'><%= l(:ppms_report_date_to) %></label>
+         <%= text_field_tag :report_date_to, value=@params['report_date_to'], options={size: 10} %><%= calendar_for(:report_date_to) %>
+    </div>
+    <div>
+      <%= submit_tag(l(:ppms_report_submit)) %>
+    </div>
+    <div>
+      <p><%=raw l(:ppms_report_date_interpretation) %></p>
+    </div>
+  </fieldset>
+  <% end %>
+</div>

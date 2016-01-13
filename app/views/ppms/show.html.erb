@@ -1,0 +1,37 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3><%= l(:ppms_report_title) %></h3>
+
+<%= render partial: 'form_dates' %>
+
+<hr>
+
+<h3><%= l(:ppms_report_title) %>: <%= @intervaltitle %></h3>
+
+<table class="ppms_report">
+  <thead>
+    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>Accepted</th><th>Completed</th><th>CompleteDate</th></tr>
+  </thead>
+  <tbody>
+    <% @entries.each do |ent| %>
+      <tr>
+      <% ent.each do |e| %><td><%= e %></td><% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if false %>
+<hr>
+<h3>Parameters</h3>
+<table>
+<% @params.keys.each do |k| %>
+  <tr><td><%= k %></td><td><%= @params[k] %></td></tr>
+<% end %>
+<tr><td>from</td><td><%= @from %></td></tr>
+<tr><td>to</td><td><%= @to %></td></tr>
+<tr><td>title</td><td><%= @intervaltitle %></td></tr>
+</table>
+<% end %>

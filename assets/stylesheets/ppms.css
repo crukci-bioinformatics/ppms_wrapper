@@ -1,0 +1,7 @@
+table.ppms_report tbody tr:nth-child(even) { background: #B2F0D1; }
+table.ppms_report tbody tr:nth-child(odd) { background: #E6FAF0; }
+
+div#ppms_date_form fieldset > div { float: left; padding: 5px 10px; }
+div#ppms_date_form label { display: block; }
+div#ppms_date_form label.noblock { display: inline; }
+

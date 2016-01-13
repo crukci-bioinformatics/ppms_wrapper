@@ -1,3 +1,15 @@
-<p><label for='settings_log_file'><span title="<%= l(:settings_ppms_log_file_descr) %>"><%= l(:settings_ppms_log_file_label) %></span></label>
-   <%= text_field_tag 'settings[log_file]', @settings['log_file'] %>
+<p><label for='settings_api_url'><span title="<%= l(:settings_ppms_api_url_descr) %>"><%= l(:settings_ppms_api_url_label) %></span></label>
+   <%= text_field_tag 'settings[api_url]', @settings['api_url'] %>
+</p>
+<p><label for='settings_api_key'><span title="<%= l(:settings_ppms_api_key_descr) %>"><%= l(:settings_ppms_api_key_label) %></span></label>
+   <%= text_field_tag 'settings[api_key]', @settings['api_key'] %>
+</p>
+<p><label for='settings_logfile'><span title="<%= l(:settings_ppms_logfile_descr) %>"><%= l(:settings_ppms_logfile_label) %></span></label>
+   <%= text_field_tag 'settings[logfile]', @settings['logfile'] %>
+</p>
+<p><label for='settings_project_root'><span title="<%= l(:settings_ppms_project_root_descr) %>"><%= l(:settings_ppms_project_root_label) %></span></label>
+   <%= text_field_tag 'settings[project_root]', @settings['project_root'] %>
+</p>
+<p><label for='settings_non_chargeable'><span title="<%= l(:settings_ppms_non_chargeable_descr) %>"><%= l(:settings_ppms_non_chargeable_label) %></span></label>
+   <%= text_field_tag 'settings[non_chargeable]', @settings['non_chargeable'] %>
 </p>

@@ -1,0 +1,24 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3><%= l(:ppms_cost_codes_caption) %></h3>
+
+<table class="ppms_report">
+  <thead>
+    <tr>
+      <th><%= l(:ppms_cost_codes_code) %></th>
+      <th><%= l(:ppms_cost_codes_descr) %></th>
+      <th><%= l(:ppms_cost_codes_ref) %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @codes.each do |code| %>
+      <tr>
+        <td><%= code.code %></td>
+        <td><%= code.name %></td>
+        <td><%= code.ref %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

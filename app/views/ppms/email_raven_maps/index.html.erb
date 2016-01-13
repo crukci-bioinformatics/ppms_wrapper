@@ -1,0 +1,22 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3><%= l(:ppms_email_map_caption) %></h3>
+
+<table class="ppms_report">
+  <thead>
+    <tr>
+      <th><%= l(:ppms_email_map_email) %></th>
+      <th><%= l(:ppms_email_map_raven) %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @emails.each do |u| %>
+      <tr>
+        <td><%= u.email %></td>
+        <td><%= u.raven %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

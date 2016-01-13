@@ -1,0 +1,10 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3><%= l(:ppms_report_title) %></h3>
+
+<%= render partial: 'form_dates' %>
+
+<hr>
+<p><%= link_to l(:ppms_list_codes), '/ppms/cost_codes' %></p>

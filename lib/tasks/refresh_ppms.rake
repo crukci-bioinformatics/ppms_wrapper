@@ -1,19 +1,19 @@
 require_dependency File.expand_path(File.dirname(__FILE__)+'/../ppms/ppms')
 
 namespace :redmine do
-  namespace :ppms_wrapper do
+  namespace :ppms do
 
     desc "Refresh Raven ID to email address Raven mappings from PPMS"
-    task :refresh_raven, [:host,:apikey] => :environment do |t,args|
+    task :refresh_raven => :environment do
       $ppmslog.info("Refreshing Raven IDs from PPMS")
-      ppms = PPMS::PPMS.new(args[:host],args[:apikey])
+      ppms = PPMS::PPMS.new(Setting.plugin_ppms['api_url'],Setting.plugin_ppms['api_key'])
       EmailRavenMap.refresh(ppms)
     end
 
     desc "Refresh cost codes from PPMS"
-    task :refresh_cost_codes, [:host,:apikey] => :environment do |t,args|
+    task :refresh_cost_codes => :environment do
       $ppmslog.info("Refreshing cost codes from PPMS")
-      ppms = PPMS::PPMS.new(args[:host],args[:apikey])
+      ppms = PPMS::PPMS.new(Setting.plugin_ppms['api_url'],Setting.plugin_ppms['api_key'])
       CostCode.refresh(ppms)
     end
   end
