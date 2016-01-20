@@ -1,0 +1,11 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3><%= l(:ppms_report_title) %></h3>
+
+<p>Checked Codes: <%= @codes_checked.size %></p>
+<p>Missing Codes: <%= @iss_code_missing.size %> codes.</p>
+<p>Bad Codes: <%= @iss_code_bad.size %> codes.</p>
+
+<hr>

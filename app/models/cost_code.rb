@@ -9,11 +9,20 @@ class CostCode < ActiveRecord::Base
   def self.refresh(ppms)
     projects = ppms.getProjects(verbose=true)
     projects.each do |proj|
-      next if CostCode.find_by(ref: proj['ProjectRef'])
-      CostCode.create(name: proj['ProjectName'],
-                      code: proj['Bcode'],
-                      ref: proj['ProjectRef'])
-      $ppmslog.info("Adding cost code '#{proj['Bcode']}'")
+      cc = CostCode.find_by(ref: proj['ProjectRef'])
+      if cc.nil?
+        CostCode.create(name: proj['ProjectName'],
+                        code: proj['Bcode'],
+                        ref: proj['ProjectRef'])
+        $ppmslog.info("Adding cost code '#{proj['Bcode']}'")
+      else
+        if cc.name != proj['ProjectName'] || cc.code != proj['Bcode']
+          cc.name = proj['ProjectName']
+          cc.code = proj['Bcode']
+          cc.save
+          $ppmslog.info("Updating cost code '#{proj['Bcode']}' (ref #{cc.code})")
+        end
+      end
     end
   end
 

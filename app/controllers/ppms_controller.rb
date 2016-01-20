@@ -1,3 +1,5 @@
+require 'set'
+
 require 'ppms/utils'
 
 class PpmsController < ApplicationController
@@ -142,6 +144,33 @@ class PpmsController < ApplicationController
       @entries.push([service,login,log.hours,iss.cost_centre,true,true,log.spent_on])
     end
     @params = params
+  end
+
+  def update
+    ppms = PPMS::PPMS.new()
+    $ppmslog.info("Refreshing Raven IDs from PPMS")
+    EmailRavenMap.refresh(ppms)
+    $ppmslog.info("Refreshing cost codes from PPMS")
+    CostCode.refresh(ppms)
+
+    open = IssueStatus.where(is_closed: false).map{|x| x.id} 
+    pset = collectProjects(Setting.plugin_ppms['project_root'])
+    @codes_checked = Set.new
+    @iss_code_missing = Set.new
+    @iss_code_bad = Set.new
+    Issue.where(status: open).where(project_id: pset).each do |iss|
+      code = iss.cost_centre
+      if code.nil?
+        @iss_code_missing.add(iss)
+      elsif !@codes_checked.include?(code)
+        code_obj = CostCode.find_by(code: code)
+        if code_obj.nil?
+          @iss_code_bad.add(iss)
+        else
+          @codes_checked.add(code)
+        end
+      end
+    end
   end
 
 end

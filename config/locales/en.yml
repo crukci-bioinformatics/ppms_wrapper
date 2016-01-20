@@ -9,6 +9,7 @@ en:
   ppms_email_map_email: "Email"
   ppms_email_map_raven: "Email"
   ppms_list_codes: "Cost Codes"
+  ppms_audit_link: "Audit cost codes and researcher emails"
   
   settings_ppms_api_url_label: "API URL"
   settings_ppms_api_url_descr: "URL of the PPMS API (without 'http://')"
@@ -36,9 +37,5 @@ en:
   ppms_label_last_fiscal: "last fiscal year"
   ppms_label_this_quarter: "this quarter"
   ppms_label_last_quarter: "last quarter"
-  ppms_label_by_month: "by month"
-  ppms_label_by_week: "by week"
-  ppms_label_by_quarter: "by quarter"
-  ppms_label_interval_type: "Interval"
 
   ppms_report_date_interpretation: "Date ranges are half-open intervals, including the start point but not the end point.<br>For example, '2015 Oct to 2016 Oct' includes October 2015 but not October 2016."
