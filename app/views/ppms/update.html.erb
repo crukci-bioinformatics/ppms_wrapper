@@ -2,10 +2,41 @@
 <%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
 <% end %>
 
-<h3><%= l(:ppms_report_title) %></h3>
+<h3><%= l(:ppms_audit_title) %></h3>
 
-<p>Checked Codes: <%= @codes_checked.size %></p>
-<p>Missing Codes: <%= @iss_code_missing.size %> codes.</p>
-<p>Bad Codes: <%= @iss_code_bad.size %> codes.</p>
+<hr>
+<h4><%= l(:ppms_audit_missing_code) %>: <%= @iss_code_missing.size %> <%= l(:ppms_audit_issues) %>.</h4>
+<p><table>
+  <thead><tr><th><%= l(:ppms_audit_label_issue) %></th>
+             <th><%= l(:ppms_audit_label_project) %></th>
+             <th><%= l(:ppms_audit_label_code) %></th>
+             <th><%= l(:ppms_audit_label_description) %></th></tr></thead>
+  <tbody>
+  <% @iss_code_missing.each do |iss| %>
+    <tr><td><a href="<%= issue_url(iss) %>"><%= iss.id %></a></td>
+        <td><a href="<%= project_url(iss.project) %>"><%= iss.project.name %></a></td>
+        <td>missing</td>
+        <td><%= iss.subject %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+<hr>
+<h4>Bad Codes: <%= @iss_code_bad.size %> issues.</h4>
+<p><table>
+  <thead><tr><th><%= l(:ppms_audit_label_issue) %></th>
+             <th><%= l(:ppms_audit_label_project) %></th>
+             <th><%= l(:ppms_audit_label_code) %></th>
+             <th><%= l(:ppms_audit_label_description) %></th></tr></thead>
+  <tbody>
+  <% @iss_code_bad.each do |iss| %>
+    <tr><td><a href="<%= issue_url(iss) %>"><%= iss.id %></a></td>
+        <td><a href="<%= project_url(iss.project) %>"><%= iss.project.name %></a></td>
+        <td><%= iss.cost_centre %></td>
+        <td><%= iss.subject %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
 
 <hr>

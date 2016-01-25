@@ -8,16 +8,20 @@ class EmailRavenMap < ActiveRecord::Base
 
   def self.refresh(ppms)
     include URI::Escape
+    known_users = {}
+    EmailRavenMap.all.each do |erm|
+      known_users[erm.raven] = erm
+    end
     ravens = ppms.listUsers
     ravens.each do |raven|
       raven = CGI.unescapeHTML(raven)
       data = ppms.getUser(URI.escape(raven))
-      erm = EmailRavenMap.find_by(raven: raven)
+      email = CGI.unescapeHTML(data['email'])
+      login = CGI.unescapeHTML(data['login'])
+      erm = known_users[raven]
       if erm.nil?
         begin
           data = ppms.getUser(URI.escape(raven))
-          email = CGI.unescapeHTML(data['email'])
-          login = CGI.unescapeHTML(data['login'])
           EmailRavenMap.create(email: email, raven: login)
           $ppmslog.info("Adding #{email} <--> #{login}")
         rescue NoMethodError
@@ -29,8 +33,8 @@ class EmailRavenMap < ActiveRecord::Base
           end
         end
       else
-        if erm.email != data['email']
-          erm.email = data['email']
+        if erm.email != email
+          erm.email = email
           erm.save
           $ppmslog.info("Updating #{raven} with email '#{erm.email}'")
         end

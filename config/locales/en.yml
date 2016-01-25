@@ -7,7 +7,7 @@ en:
   ppms_cost_codes_ref: "Internal ID"
   ppms_email_map_caption: "Known Emails and Corresponding Raven IDs"
   ppms_email_map_email: "Email"
-  ppms_email_map_raven: "Email"
+  ppms_email_map_raven: "Raven ID"
   ppms_list_codes: "Cost Codes"
   ppms_audit_link: "Audit cost codes and researcher emails"
   
@@ -28,6 +28,15 @@ en:
   ppms_report_date_type_open: "Dates"
   ppms_report_date_from: "From"
   ppms_report_date_to: "To"
+
+  ppms_audit_title: "PPMS Audit Report"
+  ppms_audit_missing_code: "Missing codes"
+  ppms_audit_bad_code: "Unknown codes"
+  ppms_audit_issues: "issues"
+  ppms_audit_label_issue: "Issue"
+  ppms_audit_label_project: "Project"
+  ppms_audit_label_code: "Code"
+  ppms_audit_label_description: "Description"
 
   ppms_label_last_12: "last 12 months"
   ppms_label_last_6: "last 6 months"

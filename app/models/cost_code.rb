@@ -7,9 +7,13 @@ class CostCode < ActiveRecord::Base
   unloadable
 
   def self.refresh(ppms)
+    known_codes = {}
+    CostCode.all.each do |code|
+      known_codes[code.ref] = code
+    end
     projects = ppms.getProjects(verbose=true)
     projects.each do |proj|
-      cc = CostCode.find_by(ref: proj['ProjectRef'])
+      cc = known_codes[proj['ProjectRef'].to_i]
       if cc.nil?
         CostCode.create(name: proj['ProjectName'],
                         code: proj['Bcode'],
