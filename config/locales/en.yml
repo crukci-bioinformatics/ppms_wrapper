@@ -21,6 +21,10 @@ en:
   settings_ppms_project_root_descr: "Project root(s) for chargeable issues"
   settings_ppms_non_chargeable_label: "Non-chargeable"
   settings_ppms_non_chargeable_descr: "Activities that are not billed to the research group"
+  settings_ppms_who_can_commit_label: "Can Submit to PPMS"
+  settings_ppms_who_can_commit_descr: "Users who can finalize billing entries being sent to PPMS"
+  settings_ppms_sanity_threshold_label: "Billing Warning Threshold"
+  settings_ppms_sanity_threshold_descr: "Warn if a particular billing entry exceeds this number of hours"
 
   ppms_report_title: "PPMS Billing Report"
   ppms_report_submit: "Submit"
@@ -36,7 +40,10 @@ en:
   ppms_audit_label_issue: "Issue"
   ppms_audit_label_project: "Project"
   ppms_audit_label_code: "Code"
+  ppms_audit_label_email: "Email"
   ppms_audit_label_description: "Description"
+  ppms_audit_missing_email: "Missing researcher email"
+  ppms_audit_bad_email: "Unknown researcher email"
 
   ppms_label_last_12: "last 12 months"
   ppms_label_last_6: "last 6 months"
@@ -48,3 +55,4 @@ en:
   ppms_label_last_quarter: "last quarter"
 
   ppms_report_date_interpretation: "Date ranges are half-open intervals, including the start point but not the end point.<br>For example, '2015 Oct to 2016 Oct' includes October 2015 but not October 2016."
+  ppms_report_asterisks: "Red asterisks in the 'User' or 'Email' fields indicate that the issue(s) does(do) not have a researcher email associated (or that email is not recognized), so the group leader has been used instead.  This should generally be corrected if possible."

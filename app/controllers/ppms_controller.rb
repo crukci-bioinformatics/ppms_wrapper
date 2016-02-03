@@ -1,4 +1,5 @@
 require 'set'
+require 'i18n'
 
 require 'ppms/utils'
 
@@ -119,31 +120,153 @@ class PpmsController < ApplicationController
     return okay
   end
 
+  def promote(ppms,project)
+    iproj = project
+    gp = ppms.getGroup(project)
+    if gp.nil?
+      while ! project.parent.nil?
+        project = project.parent
+        $ppmslog.debug("Checking parent '#{project.name}'")
+        gp = ppms.getGroup(project)
+        if !gp.nil?
+          $ppmslog.debug("Found parent '#{gp["heademail"]}'")
+          return gp["heademail"]
+        end
+      end
+    else
+     return gp["heademail"]
+    end
+    $ppmslog.info("Failed to look up group '#{iproj.name}'")
+    return nil
+  end
+
   def index
     set_up_time(params,false)
     @params = params
   end
 
+  def time_log_commit(entries,ppms)
+    allowed = semiString2List(Setting.plugin_ppms['can_commit'])
+    if ! allowed.include?(User.current.login)
+      flash[:error] = "Permission Denied."
+      redirect_to "/ppms/index"
+      return
+    end
+    io = StringIO.new(string="",mode="w")
+    io.printf("#{ l(:ppms_report_title) }: #{@intervaltitle}\n\n")
+    io.printf("ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues,Logs\n")
+    entries.each do |k,ent|
+      issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
+      logs = ent[:logs].to_a.map{|x| "#{x}"}.join(" ")
+      io.printf("#{ent[:serviceid]}, #{ent[:login]}, #{ent[:quant]}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
+      begin
+        result = ppms.submitOrder(ent[:serviceid],ent[:login],ent[:quant],ent[:projectid])
+        ent[:logs].to_a.each do |id|
+          TimeEntryOrder.create(time_entry_id: id, order_id: result)
+        end
+      rescue PPMS_Error => pe
+        $ppmslog.error(pe.message)
+        $ppmslog.error(pe.backtrace.join("\n"))
+      end
+    end 
+    fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
+    $ppmslog.debug("Filename: #{fn}")
+    send_data(io.string,filename: fn)
+  end
+
   def show
+    # to send to PPMS:
+    #   project ID (from swag)
+    #   serviceID
+    #   login
+    #   quantity
+    #   completeDate
+    # for user convenience:
+    #   user email
+    #   list of issues covered (links)
+    #   list of time log entries (links)
+    #   service name
+    #   swag code
+    #   whether login was promoted to group leader due to missing/unknown email
+    # for orphans: time log id, issue id, user (if any), code (if any), hours
+    #
+    # separate out billed and not yet billed
+    $ppmslog.debug("In 'show', format='#{params['format']}'")
     set_up_time(params,true)
     ppms = PPMS::PPMS.new()
     service = ppms.getServiceID()
+#    swags = ppms.getProjects()
     projects = collectProjects(Setting.plugin_ppms['project_root'])
     nc_activities = collectActivities(Setting.plugin_ppms['non_chargeable'])
 
-    @entries = Array.new()
-    TimeEntry.where(spent_on: @from..(@to-1)).includes(:issue).order(:spent_on).each do |log|
+    @entries = Hash.new
+    @orphans = Hash.new
+    @leaders = Hash.new
+    keyset = Set.new
+    TimeEntry.where(spent_on: @from..(@to-1)).includes(:issue).includes(:project).each do |log|
       next unless projects.include? log.project_id
       next if nc_activities.include? log.activity_id
+      next if TimeEntryOrder.find_by(time_entry_id: log.id)
       iss = log.issue
-      begin
-        login = EmailRavenMap.find_by(iss.researcher).raven
-      rescue
-        login = "unknown"
+      proj = log.project
+      who = iss.researcher
+      promoted = false
+      if who.blank? || EmailRavenMap.find_by(email: who).nil?
+        if @leaders.include? log.project_id
+          who = @leaders[log.project_id]
+        else
+          who = promote(ppms,log.project)
+          @leaders[log.project_id] = who
+        end
+        promoted = true if ! who.nil?
       end
-      @entries.push([service,login,log.hours,iss.cost_centre,true,true,log.spent_on])
+      erm = EmailRavenMap.find_by(email: who) unless who.nil?
+      raven = (who.nil? || erm.nil?) ? nil : erm.raven
+      swag = iss.cost_centre
+      cc = CostCode.find_by(code: swag)
+      code = cc.nil? ? nil : cc.ref
+      if raven.nil? || code.nil?
+        if @orphans.include? iss.id
+          @orphans[iss.id][:quant] += log.hours
+        else
+          @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj.name, pid: proj.id, promoted: promoted}
+        end
+      else
+        key = "#{raven}_#{code}"
+        if keyset.include? key
+          @entries[key][:quant] = @entries[key][:quant] + log.hours
+          @entries[key][:date] = [@entries[key][:date], log.spent_on].max
+          @entries[key][:iss].add(iss.id)
+          @entries[key][:logs].add(log.id)
+        else
+          @entries[key] = {projectid: code, serviceid: service, login: raven,
+                           quant: log.hours, date: log.spent_on, email: who,
+                           iss: Set.new([iss.id]), logs: Set.new([log.id]),
+                           project: proj.name, pid: proj.id,
+                           swag: swag, key: key, promoted: promoted}
+          keyset.add(key)
+        end
+        
+      end
+    end
+    @keys = keyset.to_a.sort{|a,b| @entries[a][:swag] <=> @entries[b][:swag]}
+    @warnings = []
+    @thresh = Setting.plugin_ppms['warning_threshold'].to_i
+    @keys.each do |k|
+      e = @entries[k]
+      if e[:quant] > @thresh
+        @warnings.append([e[:quant],e[:project],e[:swag]])
+      end
     end
     @params = params
+    if @params['format'] == 'csv'
+      time_log_commit(@entries,ppms)
+#      redirect_to "index"
+      return
+    else
+      render "show"
+      return
+    end
   end
 
   def update
@@ -158,6 +281,8 @@ class PpmsController < ApplicationController
     @codes_checked = Set.new
     @iss_code_missing = Set.new
     @iss_code_bad = Set.new
+    @iss_email_missing = Set.new
+    @iss_email_bad = Set.new
     Issue.where(status: open).where(project_id: pset).each do |iss|
       code = iss.cost_centre
       if code.nil?
@@ -170,7 +295,12 @@ class PpmsController < ApplicationController
           @codes_checked.add(code)
         end
       end
-      
+      email = iss.researcher
+      if email.nil?
+        @iss_email_missing.add(iss)
+      elsif EmailRavenMap.find_by(email: email).nil?
+        @iss_email_bad.add(iss)
+      end
     end
   end
 

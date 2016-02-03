@@ -33,15 +33,22 @@ after billing, and to ensure that they are not billed more than once.
 1. We do not want to hard-code an API key (especially since the code is hosted
    on a public GitHub repository).  But we don't want to have to supply it for
    each operation, either.  Maybe a config file on disk somewhere (outside of
-   the HTTP hierarchy)?
+   the HTTP hierarchy)?  Answer: save it as part of the plugin's configuration
+   data.
 1. How do we prevent saving of an invalid cost code or email address?  I guess
    we allow the issue as a whole to be saved, but reject the saving of the
-   custom value, and post a message to the user.
+   custom value, and post a message to the user.  Wrong... see next point.
+1. New theory on saving cost codes / researcher emails: For cost codes, the
+   field must be blank or a known cost code; nothing else is accepted.  For
+   emails, we'll accept unknown emails, but warn about them.  Then refuse to
+   bill for them when the time comes.
 1. Refreshing the email -- Raven id mapping list currently does not check
    if the email address in PPMS has changed.  Doing so would require separate
    REST calls for each Raven ID (i.e. several hundred calls).  But it's possible
    that they might change.  Maybe the Rake task should check (run manually)
    but the automatic refresh shouldn't.
+1. If the researcher email isn't valid, what should we do?  Not bill for the
+   time (but warn)?  Use the group leader?  Not allow unknown emails?
 
 #### Notes
 
@@ -58,12 +65,22 @@ after billing, and to ensure that they are not billed more than once.
 1. The API doc does not provide the parameter for "getorderlines".  The correct
    parameter is "orderref".
 
+1. Note that groups are (mostly) named for the last name of the group leader,
+   so we can look up group leaders by group name.  Except external groups, which
+   may be named anything.  So we'll have to include a field in Redmine for
+   "PPMS Group ID" and fill it in if needed.  The exemplar is Rebecca
+   Fitzgerald's group, which is named "MRC - Fitzgerald" instead of just
+   "Fitzgerald".
+
 #### Rake Tasks
 
 1. `rake redmine:ppms_wrapper:refresh_raven`: refresh list of email addresses
-   with associated Raven IDs.  To do: add option to re-check all email
-   addresses.
+   with associated Raven IDs.
 1. `rake redmine:ppms_wrapper:refresh_cost_codes`: refresh list of cost codes
    ("projects") with name, code, id.
+1. `rake redmine:ppms:audit_group_leaders`: check whether we can look up group
+   leader email addresses from the group names.  To do: add "PPMS Group ID"
+   custom value to projects, fill in if PPMS group ID is not the last name of
+   the group leader.
 1. Test format of each data type (group, list of groups, project, list of
    projects, etc).  To do: implement.

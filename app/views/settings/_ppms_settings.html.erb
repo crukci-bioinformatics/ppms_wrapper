@@ -13,3 +13,9 @@
 <p><label for='settings_non_chargeable'><span title="<%= l(:settings_ppms_non_chargeable_descr) %>"><%= l(:settings_ppms_non_chargeable_label) %></span></label>
    <%= text_field_tag 'settings[non_chargeable]', @settings['non_chargeable'] %>
 </p>
+<p><label for='settings_can_commit'><span title="<%= l(:settings_ppms_who_can_commit_descr) %>"><%= l(:settings_ppms_who_can_commit_label) %></span></label>
+   <%= text_field_tag 'settings[can_commit]', @settings['can_commit'] %>
+</p>
+<p><label for='settings_warning_threshold'><span title="<%= l(:settings_ppms_sanity_threshold_descr) %>"><%= l(:settings_ppms_sanity_threshold_label) %></span></label>
+   <%= text_field_tag 'settings[warning_threshold]', @settings['warning_threshold'] %>
+</p>

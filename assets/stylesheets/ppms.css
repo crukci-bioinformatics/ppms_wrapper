@@ -5,3 +5,6 @@ div#ppms_date_form fieldset > div { float: left; padding: 5px 10px; }
 div#ppms_date_form label { display: block; }
 div#ppms_date_form label.noblock { display: inline; }
 
+span.promoted { color: red; }
+p.threshold { color: red; }
+td.threshold { color: red; }

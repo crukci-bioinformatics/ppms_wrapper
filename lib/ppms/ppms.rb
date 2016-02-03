@@ -2,9 +2,16 @@ require 'net/http'
 require 'json'
 require 'logger'
 require 'csv'
+require 'cgi'
 
 module PPMS
+
+  class PPMS_Error < StandardError
+  end
+
   class PPMS
+    include ::I18n
+    
 
     def csv2dict(data,indexKey,headerRow=0)
       rows = ::CSV.parse(data)
@@ -60,9 +67,15 @@ module PPMS
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
       result = makeRequest(req,__method__,verbose)
+#      $ppmslog.debug("data: #{result.body}")
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
+        if !data.nil?
+          data.each do |k,v|
+            data[k] = CGI.unescapeHTML(v) if v.is_a?(String)
+          end
+        end
       rescue JSON::ParserError
         $ppmslog.error("Failed getUser: userid not found '#{id}'") if verbose
         data = nil
@@ -76,7 +89,7 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = result.body.split
+        data = result.body.split.map{|x| CGI.unescapeHTML(x)}
       rescue
         $ppmslog.error("Failed listUsers: result = '#{result.body}'") if verbose
         data = nil
@@ -125,13 +138,21 @@ module PPMS
       return data
     end
 
-    def getGroup(id,verbose=false)
+    def getGroup(gp,verbose=false)
+      cfid = CustomField.find_by(name: 'PPMS Group ID').id
+      ppms_ids = gp.custom_values.select{|x| x.custom_field_id == cfid}
+      if ppms_ids.length > 0
+        gpname = ppms_ids[0].value
+      else
+        gpname = I18n.transliterate(gp.name.strip)
+      end
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => id)
+      req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = csv2dict(result.body,"unitlogin")
+        tdata = csv2dict(result.body,"unitlogin")
+        data = tdata[tdata.keys()[0]]
       rescue
         $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
         data = nil
@@ -165,6 +186,25 @@ module PPMS
         data = nil
       end
       return data
+    end
+
+    def submitOrder(service,login,quant,project,verbose=true)
+      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}")
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key,
+                        "action" => "createorder",
+                        "serviceid" => service,
+                        "login" => login,
+                        "quantity" => quant,
+                        "projectid" => project,
+                        "accepted" => false,
+                        "completed" => false)
+      result = makeRequest(req,__method__,verbose)
+      ok = /^\d+$/ =~ result.body
+      if ok.nil?
+        raise PPMS_Error.new(result.body)
+      end
+      return result.body.to_i
     end
   end
 end

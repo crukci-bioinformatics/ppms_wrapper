@@ -16,5 +16,13 @@ namespace :redmine do
       ppms = PPMS::PPMS.new()
       CostCode.refresh(ppms)
     end
+
+    desc "Audit group leader emails from PPMS"
+    task :audit_group_leaders => :environment do
+      $ppmslog.info("Checking group leader emails against PPMS")
+      ppms = PPMS::PPMS.new()
+      EmailRavenMap.check_groups(ppms,verbose=false)
+    end
+
   end
 end

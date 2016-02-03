@@ -106,11 +106,12 @@ class PPMSTest < Minitest::Test
 
   def test_get_group
     ppms = PPMS::PPMS.new(@@test_url,@@test_key)
-    data = ppms.getGroup('Bioinformatics')
+    group = Project.find_by(name: 'Odom')
+    data = ppms.getGroup(group)
     assert(!data.nil?)
-    assert(data.include? 'Bioinformatics')
-    h = data['Bioinformatics']
-    assert(h['unitname'] == 'Bioinformatics')
+    assert(data.include? 'Odom')
+    h = data['Odom']
+    assert(h['unitname'] == 'Odom')
   end
 
 end

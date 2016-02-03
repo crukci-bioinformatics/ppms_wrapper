@@ -22,7 +22,7 @@
   </tbody>
 </table>
 <hr>
-<h4>Bad Codes: <%= @iss_code_bad.size %> issues.</h4>
+<h4><%= l(:ppms_audit_bad_code) %>: <%= @iss_code_bad.size %> issues.</h4>
 <p><table>
   <thead><tr><th><%= l(:ppms_audit_label_issue) %></th>
              <th><%= l(:ppms_audit_label_project) %></th>
@@ -39,4 +39,38 @@
   </tbody>
 </table>
 
+<hr>
+<h4><%= l(:ppms_audit_missing_email) %>: <%= @iss_email_missing.size %> issues.</h4>
+<p><table>
+  <thead><tr><th><%= l(:ppms_audit_label_issue) %></th>
+             <th><%= l(:ppms_audit_label_project) %></th>
+             <th><%= l(:ppms_audit_label_email) %></th>
+             <th><%= l(:ppms_audit_label_description) %></th></tr></thead>
+  <tbody>
+  <% @iss_email_missing.each do |iss| %>
+    <tr><td><a href="<%= issue_url(iss) %>"><%= iss.id %></a></td>
+        <td><a href="<%= project_url(iss.project) %>"><%= iss.project.name %></a></td>
+        <td><%= iss.researcher %></td>
+        <td><%= iss.subject %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+<hr>
+<h4><%= l(:ppms_audit_bad_email) %>: <%= @iss_email_bad.size %> issues.</h4>
+<p><table>
+  <thead><tr><th><%= l(:ppms_audit_label_issue) %></th>
+             <th><%= l(:ppms_audit_label_project) %></th>
+             <th><%= l(:ppms_audit_label_email) %></th>
+             <th><%= l(:ppms_audit_label_description) %></th></tr></thead>
+  <tbody>
+  <% @iss_email_bad.each do |iss| %>
+    <tr><td><a href="<%= issue_url(iss) %>"><%= iss.id %></a></td>
+        <td><a href="<%= project_url(iss.project) %>"><%= iss.project.name %></a></td>
+        <td><%= iss.researcher %></td>
+        <td><%= iss.subject %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
 <hr>
