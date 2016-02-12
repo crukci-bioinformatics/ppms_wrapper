@@ -50,6 +50,34 @@
 #                          interval_type: @params['interval_type']),
                 method: :put %><h3>
 <hr>
+<h4><%= l(:ppms_report_billed) %>:</h4>
+
+<table class="ppms_report">
+  <thead>
+    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Issues</th><th>Logs</th></tr>
+  </thead>
+  <tbody>
+    <% @bnums.each do |k| %>
+      <% e = @billed[k] %>
+      <tr>
+        <td><%= k %></td>
+        <td><%= e[:serviceid] %></td>
+        <td><%= e[:login] %></td>
+        <td><%= e[:quant] %></td>
+        <td><%= e[:projectid] %></td>
+        <td><%= e[:date] %></td>
+        <td></td>
+        <td><%= e[:email] %>
+            <% if e[:promoted] %><span class="promoted">*</span><% end %></td>
+        <td><%= e[:swag] %></td>
+        <td><%= render partial: "project_link", locals: {proj: e[:project], pid: e[:pid]} %></td>
+        <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
+        <td><%= e[:logs].to_a.sort.map{|x| "#{x}"}.join(", ") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<hr>
 <h4>Orphans</h4>
 <table class="ppms_report">
   <thead><tr><th>Issue</th><th>Project</th><th>Email</th><th>Cost Code</th><th>Hours</th></tr></thead>

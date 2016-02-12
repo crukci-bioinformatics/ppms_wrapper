@@ -21,7 +21,7 @@ namespace :redmine do
     task :audit_group_leaders => :environment do
       $ppmslog.info("Checking group leader emails against PPMS")
       ppms = PPMS::PPMS.new()
-      EmailRavenMap.check_groups(ppms,verbose=false)
+      EmailRavenMap.check_groups(ppms,false)
     end
 
   end

@@ -41,7 +41,7 @@ class EmailRavenMap < ActiveRecord::Base
         raven2email[raven] = data['email']
       end
     end
-    current.each do |email,ravens|
+    current.values.each do |ravens|
       if ravens.length > 1
         raven = choose_raven(ravens)
       else

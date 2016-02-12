@@ -17,10 +17,10 @@ class PpmsController < ApplicationController
     'this_month'   => proc { Date.today.beginning_of_month },
     'this_year'    => proc { Date.today.beginning_of_year },
     'last_year'    => proc { Date.today.beginning_of_year << 12 },
-    'this_fiscal'  => proc { t = Date.today; apr = Date.new(year=t.year,month=4)
-                             Date.new(year=t.year+((t<apr)?(-1):0),month=4) },
-    'last_fiscal'  => proc { t = Date.today; apr = Date.new(year=t.year,month=4)
-                             Date.new(year=t.year+((t<apr)?(-2):-1),month=4) },
+    'this_fiscal'  => proc { t = Date.today; apr = Date.new(t.year,4)
+                             Date.new(t.year+((t<apr)?(-1):0),4) },
+    'last_fiscal'  => proc { t = Date.today; apr = Date.new(t.year,4)
+                             Date.new(t.year+((t<apr)?(-2):-1),4) },
     'this_quarter' => proc { Date.today.beginning_of_quarter },
     'last_quarter' => proc { Date.today.beginning_of_quarter << 3 },
   }
@@ -33,10 +33,10 @@ class PpmsController < ApplicationController
     'this_month'   => proc { Date.today.end_of_month + 1 },
     'this_year'    => proc { Date.today.end_of_year + 1 },
     'last_year'    => proc { Date.today.beginning_of_year },
-    'this_fiscal'  => proc { t = Date.today; apr = Date.new(year=t.year,month=4)
-                             Date.new(year=t.year+((t<apr)?0:1),month=4) },
-    'last_fiscal'  => proc { t = Date.today; apr = Date.new(year=t.year,month=4)
-                             Date.new(year=t.year+((t<apr)?(-1):0),month=4) },
+    'this_fiscal'  => proc { t = Date.today; apr = Date.new(t.year,4)
+                             Date.new(t.year+((t<apr)?0:1),4) },
+    'last_fiscal'  => proc { t = Date.today; apr = Date.new(t.year,4)
+                             Date.new(t.year+((t<apr)?(-1):0),4) },
     'this_quarter' => proc { Date.today.end_of_quarter + 1 },
     'last_quarter' => proc { Date.today.beginning_of_quarter },
   }
@@ -45,10 +45,10 @@ class PpmsController < ApplicationController
     'last_12'    => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
     'last_6'     => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
     'last_3'     => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
-    'last_month' => proc { |x,y| "#{x.strftime('%Y %b')}" },
-    'this_month' => proc { |x,y| "#{x.strftime('%Y %b')}" },
-    'last_year' => proc { |x,y| "#{x.strftime('%Y')}" },
-    'this_year' => proc { |x,y| "#{x.strftime('%Y')}" },
+    'last_month' => proc { |x,_| "#{x.strftime('%Y %b')}" },
+    'this_month' => proc { |x,_| "#{x.strftime('%Y %b')}" },
+    'last_year' => proc { |x,_| "#{x.strftime('%Y')}" },
+    'this_year' => proc { |x,_| "#{x.strftime('%Y')}" },
     'last_fiscal' => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
     'this_fiscal' => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
     'last_quarter' => proc { |x,y| "#{x.strftime('%Y %b')} to #{y.strftime('%Y %b')}" },
@@ -152,18 +152,18 @@ class PpmsController < ApplicationController
       redirect_to "/ppms/index"
       return
     end
-    io = StringIO.new(string="",mode="w")
+    io = StringIO.new("","w")
     io.printf("#{ l(:ppms_report_title) }: #{@intervaltitle}\n\n")
-    io.printf("ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues,Logs\n")
-    entries.each do |k,ent|
+    io.printf("OrderID,ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues,Logs\n")
+    entries.values.each do |ent|
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
       logs = ent[:logs].to_a.map{|x| "#{x}"}.join(" ")
-      io.printf("#{ent[:serviceid]}, #{ent[:login]}, #{ent[:quant]}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
       begin
         result = ppms.submitOrder(ent[:serviceid],ent[:login],ent[:quant],ent[:projectid])
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
+        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{ent[:quant]}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
       rescue PPMS_Error => pe
         $ppmslog.error(pe.message)
         $ppmslog.error(pe.backtrace.join("\n"))
@@ -203,10 +203,10 @@ class PpmsController < ApplicationController
     @orphans = Hash.new
     @leaders = Hash.new
     keyset = Set.new
+    @billed = Hash.new
     TimeEntry.where(spent_on: @from..(@to-1)).includes(:issue).includes(:project).each do |log|
       next unless projects.include? log.project_id
       next if nc_activities.include? log.activity_id
-      next if TimeEntryOrder.find_by(time_entry_id: log.id)
       iss = log.issue
       proj = log.project
       who = iss.researcher
@@ -233,18 +233,34 @@ class PpmsController < ApplicationController
         end
       else
         key = "#{raven}_#{code}"
-        if keyset.include? key
-          @entries[key][:quant] = @entries[key][:quant] + log.hours
-          @entries[key][:date] = [@entries[key][:date], log.spent_on].max
-          @entries[key][:iss].add(iss.id)
-          @entries[key][:logs].add(log.id)
-        else
-          @entries[key] = {projectid: code, serviceid: service, login: raven,
+        teo = TimeEntryOrder.find_by(time_entry_id: log.id)
+        if ! teo.nil?
+          id = teo.order_id
+          if @billed.include?(id)
+            @billed[id][:quant] = @billed[id][:quant] + log.hours
+            @billed[id][:iss].add(iss.id)
+            @billed[id][:logs].add(log.id)
+          else
+            @billed[id] = {projectid: code, serviceid: service, login: raven,
                            quant: log.hours, date: log.spent_on, email: who,
                            iss: Set.new([iss.id]), logs: Set.new([log.id]),
                            project: proj.name, pid: proj.id,
                            swag: swag, key: key, promoted: promoted}
-          keyset.add(key)
+          end
+        else
+          if keyset.include? key
+            @entries[key][:quant] = @entries[key][:quant] + log.hours
+            @entries[key][:date] = [@entries[key][:date], log.spent_on].max
+            @entries[key][:iss].add(iss.id)
+            @entries[key][:logs].add(log.id)
+          else
+            @entries[key] = {projectid: code, serviceid: service, login: raven,
+                             quant: log.hours, date: log.spent_on, email: who,
+                             iss: Set.new([iss.id]), logs: Set.new([log.id]),
+                             project: proj.name, pid: proj.id,
+                             swag: swag, key: key, promoted: promoted}
+            keyset.add(key)
+          end
         end
         
       end
@@ -258,6 +274,7 @@ class PpmsController < ApplicationController
         @warnings.append([e[:quant],e[:project],e[:swag]])
       end
     end
+    @bnums = @billed.keys.sort
     @params = params
     if @params['format'] == 'csv'
       time_log_commit(@entries,ppms)
@@ -266,6 +283,19 @@ class PpmsController < ApplicationController
     else
       render "show"
       return
+    end
+  end
+
+  def audit_project_codes
+    @proj_cost_code_bad = Set.new
+    Project.all.each do |proj|
+      cc = proj.cost_centre
+      next if cc.nil?
+        
+      o = CostCode.find_by(code: cc)
+      if o.nil?
+        @proj_cost_code_bad.add(proj)
+      end
     end
   end
 
@@ -302,6 +332,7 @@ class PpmsController < ApplicationController
         @iss_email_bad.add(iss)
       end
     end
+    audit_project_codes
   end
 
 end

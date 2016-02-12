@@ -6,7 +6,7 @@ Redmine::Plugin.register :ppms do
   name 'PPMS plugin'
   author 'Gord Brown'
   description 'Wrap the API for PPMS in a Redmine plugin'
-  version '0.9.0'
+  version '1.0.0'
   url 'https://github.com/crukci-bioinformatics/ppms_wrapper'
   author_url 'http://gdbrown.org/blog'
 
@@ -16,13 +16,15 @@ Redmine::Plugin.register :ppms do
                         'project_root' => 'Research Groups; Fitzgerald',
                         'non_chargeable' => 'Experimental Design Meetings; Statistics Clinic Meeting',
                         'can_commit' => 'admin; eldrid01',
-                        'warning_threshold' => '100'},
+                        'warning_threshold' => '60'},
            :partial => 'settings/ppms_settings')
   menu :top_menu, :ppms, { controller: '/ppms', action: 'index' }, caption: :ppms_caption, before: :administration
 end
 
 Rails.configuration.after_initialize do
   Issue.send(:include,PPMS::IssuePatch)
+  Project.send(:include,PPMS::ProjectPatch)
+  TimeEntry.send(:include,PPMS::TimeEntryPatch)
   initr = PPMS::Initializer.new
   initr.init_logger
 end

@@ -4,7 +4,7 @@ This plugin provides the following capabilities to a Redmine installation:
 
 1. Validate cost codes and researcher email addresses against the PPMS database.
     1. when an issue is created or saved
-    1. when time is logged against an issue
+    1. when an audit is run
 1. Generate monthly billing reports for cross-charging to research groups.
 1. Commit billing records reflecting said cross-charging to PPMS on demand.
 1. Mark time logs as "charged", after which they cannot be changed.
@@ -69,8 +69,11 @@ after billing, and to ensure that they are not billed more than once.
    so we can look up group leaders by group name.  Except external groups, which
    may be named anything.  So we'll have to include a field in Redmine for
    "PPMS Group ID" and fill it in if needed.  The exemplar is Rebecca
-   Fitzgerald's group, which is named "MRC - Fitzgerald" instead of just
-   "Fitzgerald".
+   Fitzgerald's group, which is named "MRC -  Fitzgerald" instead of just
+   "Fitzgerald" (with one space before the dash, and two after, for no
+   apparent reason).
+
+1. Do cancelled orders ever go away in PPMS?  How can we make them go away?
 
 #### Rake Tasks
 
@@ -84,3 +87,12 @@ after billing, and to ensure that they are not billed more than once.
    the group leader.
 1. Test format of each data type (group, list of groups, project, list of
    projects, etc).  To do: implement.
+
+#### Remaining Features
+
+1. A billing report showing what has been billed, and when (done).
+1. Audits of grant codes associated with research groups (in addition to
+   issues) (done).
+1. Submit order before writing line to spreadsheet, so sheet can include order
+   ID (done).
+1. Block changes to time logs after they have been billed (done).

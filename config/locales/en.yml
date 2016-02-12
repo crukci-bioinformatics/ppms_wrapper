@@ -32,6 +32,7 @@ en:
   ppms_report_date_type_open: "Dates"
   ppms_report_date_from: "From"
   ppms_report_date_to: "To"
+  ppms_report_billed: "Billed"
 
   ppms_audit_title: "PPMS Audit Report"
   ppms_audit_missing_code: "Missing codes"
@@ -44,6 +45,7 @@ en:
   ppms_audit_label_description: "Description"
   ppms_audit_missing_email: "Missing researcher email"
   ppms_audit_bad_email: "Unknown researcher email"
+  ppms_audit_bad_proj_code: "Unknown Project Cost Codes"
 
   ppms_label_last_12: "last 12 months"
   ppms_label_last_6: "last 6 months"

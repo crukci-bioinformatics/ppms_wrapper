@@ -6,7 +6,7 @@ module PPMS
       issue = context[:issue]
       if !issue.nil?
         if !issue.warnings.nil?
-          issue.warnings.each do |k,v|
+          issue.warnings.values.each do |v|
             controller.flash[:warning] = v
           end
         end

@@ -11,7 +11,7 @@ class CostCode < ActiveRecord::Base
     CostCode.all.each do |code|
       known_codes[code.ref] = code
     end
-    projects = ppms.getProjects(verbose=true)
+    projects = ppms.getProjects(true)
     projects.each do |proj|
       cc = known_codes[proj['ProjectRef'].to_i]
       if cc.nil?

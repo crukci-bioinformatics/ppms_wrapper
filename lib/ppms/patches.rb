@@ -40,7 +40,7 @@ module PPMS
                 end
               end
             end
-          rescue Exception => e
+          rescue StandardError => e
             $ppmslog.error("trapped an error: #{e.message}")
           end
           return returnval
@@ -50,6 +50,38 @@ module PPMS
           @warnings ||= ActiveModel::Errors.new(self)
         end
 
+      end
+    end
+  end
+
+  module ProjectPatch
+    def self.included(base)
+      base.class_eval do
+
+        def cost_centre
+          swag = nil
+          cf = CustomField.find_by(name: 'Cost Centre', type: 'ProjectCustomField')
+          code = self.custom_values.find_by(custom_field: cf)
+          if (! code.nil?) && (! code.value.blank?)
+            swag = code.value
+          end
+          return swag
+        end
+
+      end
+    end
+  end
+
+  module TimeEntryPatch
+    def self.included(base)
+      base.class_eval do
+        validate :time_entry_not_billed
+        def time_entry_not_billed
+          billed = ! TimeEntryOrder.find_by(time_entry_id: self.id).nil?
+          if billed
+            errors.add("time entry"," cannot be altered because it is already billed.")
+          end
+        end
       end
     end
   end

@@ -13,7 +13,7 @@ module PPMS
     include ::I18n
     
 
-    def csv2dict(data,indexKey,headerRow=0)
+    def csv2dict(data,indexKey,headerRow: 0)
       rows = ::CSV.parse(data)
       index = rows[headerRow].find_index(indexKey)
       inames = rows[headerRow]
@@ -30,9 +30,9 @@ module PPMS
       return data
     end
 
-    def initialize()
-      @host = Setting.plugin_ppms['api_url']
-      @key = Setting.plugin_ppms['api_key']
+    def initialize(host: nil, key: nil)
+      @host = host.nil? ? Setting.plugin_ppms['api_url'] : host
+      @key = key.nil? ? Setting.plugin_ppms['api_key'] : key
       @uri = URI("https://#{@host}/pumapi/")
     end
 
@@ -55,7 +55,6 @@ module PPMS
     end
 
     def isConnected(verbose=false)
-      result = false
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getsystems", "format" => "json")
       result = makeRequest(req,__method__,verbose)
@@ -97,7 +96,7 @@ module PPMS
       return data
     end
 
-    def getServices(core=7,verbose=false)
+    def getServices(core: 7,verbose: false)
       if core.nil?
         $ppmslog.error("#{__method__}: 'core' parameter must not be nil.") if verbose
         return nil
@@ -110,8 +109,8 @@ module PPMS
       return data
     end
 
-    def getServiceID(core=7,name="Hours",verbose=false)
-      data = getServices(verbose=verbose)
+    def getServiceID(core: 7,name: "Hours",verbose: false)
+      data = getServices(core: core,verbose: verbose)
       return data[name]["Service id"]
     end
 
@@ -139,13 +138,16 @@ module PPMS
     end
 
     def getGroup(gp,verbose=false)
-      cfid = CustomField.find_by(name: 'PPMS Group ID').id
-      ppms_ids = gp.custom_values.select{|x| x.custom_field_id == cfid}
-      if ppms_ids.length > 0
-        gpname = ppms_ids[0].value
-      else
-        gpname = I18n.transliterate(gp.name.strip)
+      cf = CustomField.find_by(name: 'PPMS Group ID')
+      gpname = nil
+      if cf
+        cfid = CustomField.find_by(name: 'PPMS Group ID').id
+        ppms_ids = gp.custom_values.select{|x| x.custom_field_id == cfid}
+        if ppms_ids.length > 0
+          gpname = ppms_ids[0].value
+        end
       end
+      gpname = I18n.transliterate(gp.name.strip) if gpname.nil?
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
       result = makeRequest(req,__method__,verbose)
@@ -166,7 +168,7 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = csv2dict(result.body,"Order ref.",headerRow=1)
+        data = csv2dict(result.body,"Order ref.",headerRow: 1)
       rescue
         $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
         data = nil
@@ -180,7 +182,7 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = csv2dict(result.body,"Order ID",headerRow=0)
+        data = csv2dict(result.body,"Order ID",headerRow: 0)
       rescue
         $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
         data = nil

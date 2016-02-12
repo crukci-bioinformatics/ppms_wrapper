@@ -74,3 +74,16 @@
   </tbody>
 </table>
 <hr>
+<h4><%= l(:ppms_audit_bad_proj_code) %>: <%= @proj_cost_code_bad.size %> projects.</h4>
+<p><table>
+  <thead><tr><th><%= l(:ppms_audit_label_project) %></th>
+             <th><%= l(:ppms_audit_label_code) %></th></tr></thead>
+  <tbody>
+  <% @proj_cost_code_bad.each do |proj| %>
+    <tr><td><a href="<%= project_url(proj) %>"><%= proj.name %></a></td>
+        <td><%= proj.cost_centre %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+<hr>
