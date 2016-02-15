@@ -126,10 +126,10 @@ class PpmsController < ApplicationController
     if gp.nil?
       while ! project.parent.nil?
         project = project.parent
-        $ppmslog.debug("Checking parent '#{project.name}'")
+#        $ppmslog.debug("Checking parent '#{project.name}'")
         gp = ppms.getGroup(project)
         if !gp.nil?
-          $ppmslog.debug("Found parent '#{gp["heademail"]}'")
+#          $ppmslog.debug("Found parent '#{gp["heademail"]}'")
           return gp["heademail"]
         end
       end
@@ -170,7 +170,7 @@ class PpmsController < ApplicationController
       end
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
-    $ppmslog.debug("Filename: #{fn}")
+#    $ppmslog.debug("Filename: #{fn}")
     send_data(io.string,filename: fn)
   end
 
@@ -191,7 +191,7 @@ class PpmsController < ApplicationController
     # for orphans: time log id, issue id, user (if any), code (if any), hours
     #
     # separate out billed and not yet billed
-    $ppmslog.debug("In 'show', format='#{params['format']}'")
+#    $ppmslog.debug("In 'show', format='#{params['format']}'")
     set_up_time(params,true)
     ppms = PPMS::PPMS.new()
     service = ppms.getServiceID()

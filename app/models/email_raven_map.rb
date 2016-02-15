@@ -35,7 +35,7 @@ class EmailRavenMap < ActiveRecord::Base
       if data.nil?
         $ppmslog.warn("#{__method__}: no data for raven='#{raven}'")
       elsif !data['active']
-        $ppmslog.debug("#{__method__}: skipping inactive user '#{raven}'")
+#        $ppmslog.debug("#{__method__}: skipping inactive user '#{raven}'")
       else
         current[data['email'].downcase].append(data['login'])
         raven2email[raven] = data['email']

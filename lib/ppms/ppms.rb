@@ -191,7 +191,7 @@ module PPMS
     end
 
     def submitOrder(service,login,quant,project,verbose=true)
-      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}")
+#      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}")
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "createorder",
