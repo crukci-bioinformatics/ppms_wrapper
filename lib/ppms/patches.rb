@@ -35,7 +35,8 @@ module PPMS
                 code = CostCode.find_by(code: x.value)
                 if code.nil?
 #                  $ppmslog.warn("Unknown cost code: '#{x.value}'")
-                  errors.add("cost centre"," does not exist: '#{x.value}'")
+#                  errors.add("cost centre"," does not exist: '#{x.value}'")
+                  warnings.add("cost centre"," does not exist: '#{x.value}'")
                   returnval = false
                 end
               end
