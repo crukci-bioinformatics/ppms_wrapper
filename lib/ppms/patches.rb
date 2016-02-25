@@ -27,17 +27,15 @@ module PPMS
                 if x.value.blank?
                   warnings.add(:email, "Warning: researcher email not provided")
                 elsif email.nil?
-#                  $ppmslog.warn("Unknown email address: '#{x.value}'")
                   warnings.add(:email, "Warning: researcher email not recognized: '#{x.value}'")
                 end
               elsif x.custom_field_id == code_id
                 next if x.value.nil? || x.value == ''
                 code = CostCode.find_by(code: x.value)
                 if code.nil?
-#                  $ppmslog.warn("Unknown cost code: '#{x.value}'")
 #                  errors.add("cost centre"," does not exist: '#{x.value}'")
-                  warnings.add("cost centre"," does not exist: '#{x.value}'")
-                  returnval = false
+                  warnings.add("cost centre","Cost centre does not exist: '#{x.value}'")
+#                  returnval = false
                 end
               end
             end
