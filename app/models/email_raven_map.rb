@@ -1,3 +1,5 @@
+require 'set'
+
 require 'ppms/ppms'
 require 'ppms/utils'
 
@@ -25,12 +27,14 @@ class EmailRavenMap < ActiveRecord::Base
 
   def self.refresh(ppms)
     known_users = {}
+    seen = Set.new
     EmailRavenMap.all.each do |erm|
       known_users[erm.raven] = erm
     end
     current = Hash.new{|h,k| h[k] = []}
     raven2email = Hash.new
     ppms.listUsers.each do |raven|
+      seen.add(raven)
       data = ppms.getUser(raven)
       if data.nil?
         $ppmslog.warn("#{__method__}: no data for raven='#{raven}'")
@@ -58,6 +62,11 @@ class EmailRavenMap < ActiveRecord::Base
           erm.save
           $ppmslog.info("Updating #{raven} with email '#{erm.email}'")
         end
+      end
+    end
+    known_users.each do |raven,erm|
+      if !seen.include?(raven)
+        $ppmslog.warn("Extra login<->email map: login=#{raven} email=#{erm.email}")
       end
     end
   end
