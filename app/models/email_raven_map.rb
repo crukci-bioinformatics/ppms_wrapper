@@ -34,15 +34,16 @@ class EmailRavenMap < ActiveRecord::Base
     current = Hash.new{|h,k| h[k] = []}
     raven2email = Hash.new
     ppms.listUsers.each do |raven|
+      raven = raven.downcase
       seen.add(raven)
       data = ppms.getUser(raven)
       if data.nil?
         $ppmslog.warn("#{__method__}: no data for raven='#{raven}'")
-      elsif !data['active']
-#        $ppmslog.debug("#{__method__}: skipping inactive user '#{raven}'")
+      elsif !data['active'] || data['email'].blank?
+        next
       else
-        current[data['email'].downcase].append(data['login'])
-        raven2email[raven] = data['email']
+        current[data['email'].downcase].append(data['login'].downcase)
+        raven2email[raven] = data['email'].downcase
       end
     end
     current.values.each do |ravens|
@@ -66,7 +67,8 @@ class EmailRavenMap < ActiveRecord::Base
     end
     known_users.each do |raven,erm|
       if !seen.include?(raven)
-        $ppmslog.warn("Extra login<->email map: login=#{raven} email=#{erm.email}")
+        $ppmslog.warn("Extraneous login '#{raven}' (#{erm.email}) (removing...)")
+        erm.destroy
       end
     end
   end

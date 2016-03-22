@@ -326,6 +326,7 @@ class PpmsController < ApplicationController
         end
       end
       email = iss.researcher
+      email = email.downcase unless email.nil?
       if email.nil?
         @iss_email_missing.add(iss)
       elsif EmailRavenMap.find_by(email: email).nil?

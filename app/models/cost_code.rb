@@ -7,7 +7,7 @@ require 'ppms/ppms'
 class CostCode < ActiveRecord::Base
   unloadable
 
-  @@CODE_PATTERN = /^([A-Z]{4}\/\d{3})|([A-Z]{4}\.[A-Z]{4})$/
+  @@CODE_PATTERN = /^([A-Z]{4}\/\d{3})|([A-Z]{4}\.[A-Z]{4})|([0-9]+)$/
 
   def self.extract_code(proj)
     # look for code in field 'Bcode'
@@ -18,9 +18,7 @@ class CostCode < ActiveRecord::Base
     code = proj['Bcode']
     mat = code =~ @@CODE_PATTERN
     if mat.nil?
-      codeFromName = proj['ProjectName'].split()[0]
-      mat = codeFromName =~ @@CODE_PATTERN
-      code = codeFromName if !mat.nil?
+      code = nil
     end
     return code
   end
@@ -34,6 +32,7 @@ class CostCode < ActiveRecord::Base
     projects = ppms.getProjects(true)
     projects.each do |proj|
       code = self.extract_code(proj)
+      next if code.nil?
       seen.add(proj['ProjectRef'].to_i)
       cc = known_codes[proj['ProjectRef'].to_i]
       if cc.nil?
@@ -52,7 +51,8 @@ class CostCode < ActiveRecord::Base
     end
     known_codes.each do |ref,code|
       if !seen.include?(ref)
-        $ppmslog.warn("Extraneous code: #{ref} #{code['code']}")
+        $ppmslog.warn("Extraneous code: #{ref} #{code['code']} (removing...)")
+        code.destroy
       end
     end
   end
