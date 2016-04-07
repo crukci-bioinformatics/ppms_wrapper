@@ -58,3 +58,4 @@ en:
 
   ppms_report_date_interpretation: "Date ranges are half-open intervals, including the start point but not the end point.<br>For example, '2015 Oct to 2016 Oct' includes October 2015 but not October 2016."
   ppms_report_asterisks: "Red asterisks in the 'User' or 'Email' fields indicate that the issue(s) does(do) not have a researcher email associated (or that email is not recognized), so the group leader has been used instead.  This should generally be corrected if possible."
+  ppms_report_bad_report_type: "Unknown commit type '%{rtype}', should be 'commit' or 'spreadsheet'."

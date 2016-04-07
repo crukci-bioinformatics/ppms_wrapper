@@ -41,14 +41,17 @@
   <p class="threshold">Warning: billing <%= x[0] %> hours to <%= x[2] %>, <%= x[1] %> group.</p>
 <% end %>
 
-<h3><%= link_to "COMMIT", "/ppms/index.csv?date_type=#{@params['date_type']}&period_type=#{@params['period_type']}&report_date_from=#{@params['report_date_from']}&report_date_to=#{@params['report_date_to']}",
+<h3><%= link_to "COMMIT", "/ppms/index.csv?date_type=#{@params['date_type']}&period_type=#{@params['period_type']}&report_date_from=#{@params['report_date_from']}&report_date_to=#{@params['report_date_to']}&commit_type=commit",
 #                          format: 'csv',
 #                          date_type: @params['date_type'],
 #                          period_type: @params['period_type'],
 #                          report_date_from: @params['report_date_from'],
 #                          report_date_to: @params['report_date_to'],
 #                          interval_type: @params['interval_type']),
-                method: :put %><h3>
+                method: :put %>
+or 
+<%= link_to "SPREADSHEET", "/ppms/index.csv?date_type=#{@params['date_type']}&period_type=#{@params['period_type']}&report_date_from=#{@params['report_date_from']}&report_date_to=#{@params['report_date_to']}&commit_type=spreadsheet",method: :put %>
+</h3>
 <hr>
 <h4><%= l(:ppms_report_billed) %>:</h4>
 
