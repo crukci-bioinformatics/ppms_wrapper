@@ -96,6 +96,24 @@ module PPMS
       return data
     end
 
+    def getSystems(verbose: false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key, "action" => "getsystems")
+      result = makeRequest(req,__method__,verbose)
+      return result if result.nil?
+      data = csv2dict(result.body,"System id")
+      return data
+    end
+
+    def getSystemUsers(system,verbose: false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key, "action" => "getsysrights", "id" => system)
+      result = makeRequest(req,__method__,verbose)
+      return result if result.nil?
+      data = result.body.split.map{|x| x.split(":")[1]}
+      return data
+    end
+      
     def getServices(core: 7,verbose: false)
       if core.nil?
         $ppmslog.error("#{__method__}: 'core' parameter must not be nil.") if verbose
