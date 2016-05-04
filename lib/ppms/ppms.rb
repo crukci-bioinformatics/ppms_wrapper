@@ -159,13 +159,13 @@ module PPMS
       cf = CustomField.find_by(name: 'PPMS Group ID')
       gpname = nil
       if cf
-        cfid = CustomField.find_by(name: 'PPMS Group ID').id
+        cfid = cf.id
         ppms_ids = gp.custom_values.select{|x| x.custom_field_id == cfid}
         if ppms_ids.length > 0
           gpname = ppms_ids[0].value
         end
       end
-      gpname = I18n.transliterate(gp.name.strip) if gpname.nil?
+      gpname = I18n.transliterate(gp.name.strip) if gpname.blank?
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
       result = makeRequest(req,__method__,verbose)
