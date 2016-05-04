@@ -208,8 +208,9 @@ module PPMS
       return data
     end
 
-    def submitOrder(service,login,quant,project,verbose=true)
-#      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}")
+    def submitOrder(service,login,quant,project,cdate,verbose=true)
+      ddate = cdate.to_s
+#      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}, #{ddate}")
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "createorder",
@@ -217,8 +218,9 @@ module PPMS
                         "login" => login,
                         "quantity" => quant,
                         "projectid" => project,
-                        "accepted" => false,
-                        "completed" => false)
+                        "accepted" => true,
+                        "completed" => true,
+                        "completeddate" => ddate)
       result = makeRequest(req,__method__,verbose)
       ok = /^\d+$/ =~ result.body
       if ok.nil?

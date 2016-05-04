@@ -18,6 +18,7 @@
     <% @keys.each do |k| %>
       <% e = @entries[k] %>
       <% warn = e[:quant] > @thresh ? "class=\"threshold\"" : "" %>
+      <% e[:quant] = e[:quant].round(2) %>
       <tr>
         <td <%=raw warn %>><%= e[:serviceid] %></td>
         <td <%=raw warn %>><%= e[:login] %></td>
@@ -62,6 +63,7 @@ or
   <tbody>
     <% @bnums.each do |k| %>
       <% e = @billed[k] %>
+      <% e[:quant] = e[:quant].round(2) %>
       <tr>
         <td><%= k %></td>
         <td><%= e[:serviceid] %></td>
@@ -88,6 +90,7 @@ or
   <% @orphans.keys.sort.each do |orphid| %>
     <tr>
       <% orph = @orphans[orphid] %>
+      <% orph[:quant] = orph[:quant].round(2) %>
       <td><%= render partial: "issue_link", locals: {iss: orph[:issue]} %></td>
       <td><%= render partial: "project_link", locals: {proj: orph[:project], pid: orph[:pid]} %></td>
       <td><%= orph[:who] %>

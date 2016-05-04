@@ -159,12 +159,13 @@ class PpmsController < ApplicationController
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
       logs = ent[:logs].to_a.map{|x| "#{x}"}.join(" ")
       begin
-        result = ppms.submitOrder(ent[:serviceid],ent[:login],ent[:quant],ent[:projectid])
+        quant = ent[:quant].round(2)
+        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date])
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
-        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{ent[:quant]}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
-      rescue PPMS_Error => pe
+        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{quant}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
+      rescue PPMS::PPMS_Error => pe
         $ppmslog.error(pe.message)
         $ppmslog.error(pe.backtrace.join("\n"))
       end
@@ -189,7 +190,8 @@ class PpmsController < ApplicationController
       ent[:logs].to_a.each do |id|
         TimeEntryOrder.create(time_entry_id: id, order_id: result)
       end
-      io.printf("#{ent[:email]}, #{ent[:swag]}, #{codename},#{ent[:quant]}\n")
+      quant = quant.round(2)
+      io.printf("#{ent[:email]}, #{ent[:swag]}, #{codename},#{quant}\n")
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
 #    $ppmslog.debug("Filename: #{fn}")

@@ -7,15 +7,6 @@ module PPMS
       base.class_eval do
         before_validation :ensure_valid_custom_fields
         def ensure_valid_custom_fields
-#          $ppmslog.info("local_variables: #{local_variables}")
-#          $ppmslog.info("instance_variables: #{instance_variables}")
-#          $ppmslog.info("global_variables: #{global_variables}")
-#          $ppmslog.info("errors: #{@errors.class}")
-#          begin
-#            x = ::Flash::FlashHash.from_session_value(session["flash"])
-#          rescue Exception => e
-#            $ppmslog.error("trapped bad flash: #{e.message}")
-#          end
           email_id = CustomField.find_by(name: "Researcher Email").id
           code_id = CustomField.find_by(name: "Cost Centre").id
           returnval = true
