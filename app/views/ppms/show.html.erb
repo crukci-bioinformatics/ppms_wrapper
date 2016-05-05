@@ -19,6 +19,7 @@
       <% e = @entries[k] %>
       <% warn = e[:quant] > @thresh ? "class=\"threshold\"" : "" %>
       <% e[:quant] = e[:quant].round(2) %>
+      <% plist = e[:project].to_a %>
       <tr>
         <td <%=raw warn %>><%= e[:serviceid] %></td>
         <td <%=raw warn %>><%= e[:login] %></td>
@@ -29,7 +30,7 @@
         <td><%= e[:email] %>
             <% if e[:promoted] %><span class="promoted">*</span><% end %></td>
         <td><%= e[:swag] %></td>
-        <td><%= render partial: "project_link", locals: {proj: e[:project], pid: e[:pid]} %></td>
+        <td><%= render partial: "project_link", collection: plist, as: :p %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
         <td><%= e[:logs].to_a.sort.map{|x| "#{x}"}.join(", ") %></td>
       </tr>
@@ -64,6 +65,7 @@ or
     <% @bnums.each do |k| %>
       <% e = @billed[k] %>
       <% e[:quant] = e[:quant].round(2) %>
+      <% plist = e[:project].to_a %>
       <tr>
         <td><%= k %></td>
         <td><%= e[:serviceid] %></td>
@@ -75,7 +77,7 @@ or
         <td><%= e[:email] %>
             <% if e[:promoted] %><span class="promoted">*</span><% end %></td>
         <td><%= e[:swag] %></td>
-        <td><%= render partial: "project_link", locals: {proj: e[:project], pid: e[:pid]} %></td>
+        <td><%= render partial: "project_link", collection: plist, as: :p %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
         <td><%= e[:logs].to_a.sort.map{|x| "#{x}"}.join(", ") %></td>
       </tr>
@@ -92,7 +94,7 @@ or
       <% orph = @orphans[orphid] %>
       <% orph[:quant] = orph[:quant].round(2) %>
       <td><%= render partial: "issue_link", locals: {iss: orph[:issue]} %></td>
-      <td><%= render partial: "project_link", locals: {proj: orph[:project], pid: orph[:pid]} %></td>
+      <td><%= render partial: "project_link", locals: {p: orph[:project]} %></td>
       <td><%= orph[:who] %>
           <% if orph[:promoted] %><span class="promoted">*</span><% end %></td>
       </td>

@@ -190,7 +190,7 @@ class PpmsController < ApplicationController
       ent[:logs].to_a.each do |id|
         TimeEntryOrder.create(time_entry_id: id, order_id: result)
       end
-      quant = quant.round(2)
+      quant = ent[:quant].round(2)
       io.printf("#{ent[:email]}, #{ent[:swag]}, #{codename},#{quant}\n")
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
@@ -254,22 +254,24 @@ class PpmsController < ApplicationController
         if @orphans.include? iss.id
           @orphans[iss.id][:quant] += log.hours
         else
-          @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj.name, pid: proj.id, promoted: promoted}
+          @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj, promoted: promoted}
         end
       else
         key = "#{raven}_#{code}"
         teo = TimeEntryOrder.find_by(time_entry_id: log.id)
         if ! teo.nil?
-          id = teo.order_id
+          id = key
           if @billed.include?(id)
             @billed[id][:quant] = @billed[id][:quant] + log.hours
+            @billed[id][:date] = [@billed[id][:date], log.spent_on].max
             @billed[id][:iss].add(iss.id)
             @billed[id][:logs].add(log.id)
+            @billed[id][:project].add(proj)
           else
             @billed[id] = {projectid: code, serviceid: service, login: raven,
                            quant: log.hours, date: log.spent_on, email: who,
                            iss: Set.new([iss.id]), logs: Set.new([log.id]),
-                           project: proj.name, pid: proj.id,
+                           project: Set.new([proj]),
                            swag: swag, key: key, promoted: promoted}
           end
         else
@@ -278,11 +280,12 @@ class PpmsController < ApplicationController
             @entries[key][:date] = [@entries[key][:date], log.spent_on].max
             @entries[key][:iss].add(iss.id)
             @entries[key][:logs].add(log.id)
+            @entries[key][:project].add(proj)
           else
             @entries[key] = {projectid: code, serviceid: service, login: raven,
                              quant: log.hours, date: log.spent_on, email: who,
                              iss: Set.new([iss.id]), logs: Set.new([log.id]),
-                             project: proj.name, pid: proj.id,
+                             project: Set.new([proj]),
                              swag: swag, key: key, promoted: promoted}
             keyset.add(key)
           end
@@ -295,8 +298,9 @@ class PpmsController < ApplicationController
     @thresh = Setting.plugin_ppms['warning_threshold'].to_i
     @keys.each do |k|
       e = @entries[k]
+      e[:project] = reduceProjSet(e[:project])
       if e[:quant] > @thresh
-        @warnings.append([e[:quant],e[:project],e[:swag]])
+        @warnings.append([e[:quant].round(2),e[:project],e[:swag]])
       end
     end
     @bnums = @billed.keys.sort
