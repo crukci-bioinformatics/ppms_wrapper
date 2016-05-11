@@ -12,7 +12,7 @@
 
 <table class="ppms_report">
   <thead>
-    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Issues</th><th>Logs</th></tr>
+    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Issues</th></tr>
   </thead>
   <tbody>
     <% @keys.each do |k| %>
@@ -31,8 +31,9 @@
             <% if e[:promoted] %><span class="promoted">*</span><% end %></td>
         <td><%= e[:swag] %></td>
         <td><%= render partial: "project_link", collection: plist, as: :p %></td>
+        <td><%= e[:affil] %></td>
+        <td class="price">£<%= e[:price] %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
-        <td><%= e[:logs].to_a.sort.map{|x| "#{x}"}.join(", ") %></td>
       </tr>
     <% end %>
   </tbody>
@@ -59,7 +60,7 @@ or
 
 <table class="ppms_report">
   <thead>
-    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Issues</th><th>Logs</th></tr>
+    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Issues</th></tr>
   </thead>
   <tbody>
     <% @bnums.each do |k| %>
@@ -67,7 +68,7 @@ or
       <% e[:quant] = e[:quant].round(2) %>
       <% plist = e[:project].to_a %>
       <tr>
-        <td><%= k %></td>
+        <td><%= e[:teo] %></td>
         <td><%= e[:serviceid] %></td>
         <td><%= e[:login] %></td>
         <td><%= e[:quant] %></td>
@@ -78,8 +79,9 @@ or
             <% if e[:promoted] %><span class="promoted">*</span><% end %></td>
         <td><%= e[:swag] %></td>
         <td><%= render partial: "project_link", collection: plist, as: :p %></td>
+        <td><%= e[:affil] %></td>
+        <td class="price">£<%= e[:price] %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
-        <td><%= e[:logs].to_a.sort.map{|x| "#{x}"}.join(", ") %></td>
       </tr>
     <% end %>
   </tbody>

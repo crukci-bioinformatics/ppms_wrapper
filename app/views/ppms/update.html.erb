@@ -81,7 +81,7 @@
   <tbody>
   <% @proj_cost_code_bad.each do |proj| %>
     <tr><td><a href="<%= project_url(proj) %>"><%= proj.name %></a></td>
-        <td><%= proj.cost_centre %></td>
+        <td><%= proj.ppms_cost_centre %></td>
     </tr>
   <% end %>
   </tbody>

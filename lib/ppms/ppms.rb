@@ -12,16 +12,26 @@ module PPMS
   class PPMS
     include ::I18n
     
+    @@affiliation2id = {'Internal' => 1,
+                        'Charity' => 2,
+                        'RC / UKGov' => 5,
+                        'EC / ERC' => 6,
+                        'WT' => 7,
+                        'Commercial' => 8,
+                        'Core' => 9}
 
     def csv2dict(data,indexKey,headerRow: 0)
       rows = ::CSV.parse(data)
-      index = rows[headerRow].find_index(indexKey)
-      inames = rows[headerRow]
+      hdrRow = rows[headerRow].map{|x| x.strip}
+      index = hdrRow.find_index(indexKey)
+      inames = hdrRow
       data = {}
       rows.each_index do |i|
         next if i <= headerRow
         rdata = {}
         row = rows[i]
+        row = row.map{|x| x.nil? ? nil : x.strip}
+        next if row.blank?
         row.each_index do |col|
           rdata[inames[col]] = row[col]
         end
@@ -34,6 +44,7 @@ module PPMS
       @host = host.nil? ? Setting.plugin_ppms['api_url'] : host
       @key = key.nil? ? Setting.plugin_ppms['api_key'] : key
       @uri = URI("https://#{@host}/pumapi/")
+      @prices = nil
     end
 
     def makeRequest(req,tag,verbose)
@@ -66,7 +77,6 @@ module PPMS
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
       result = makeRequest(req,__method__,verbose)
-#      $ppmslog.debug("data: #{result.body}")
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
@@ -210,7 +220,6 @@ module PPMS
 
     def submitOrder(service,login,quant,project,cdate,verbose=true)
       ddate = cdate.to_s
-#      $ppmslog.debug("Order: #{service}, #{login}, #{quant}, #{project}, #{ddate}")
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "createorder",
@@ -228,5 +237,61 @@ module PPMS
       end
       return result.body.to_i
     end
+
+    def loadPrices(verbose=false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key,
+                        "action" => "getpriceslist",
+                        "format" => "csv")
+      result = makeRequest(req,__method__,verbose)
+      rows = ::CSV.parse(result.body)
+      hdrRow = rows[0].map{|x| x.strip}
+      affCol = hdrRow.find_index("affiliationid")
+      projCol = hdrRow.find_index("projectid")
+      priceCol = hdrRow.find_index("Price")
+      @prices = Hash.new(default=0)
+      rows[1..rows.length-1].each do |row|
+        affId = row[affCol].to_i
+        projId = row[projCol].to_i
+        price = row[priceCol].to_f
+        if !@prices.include?(affId)
+          @prices[affId] = Hash.new(default=0)
+        end
+        @prices[affId][projId] = price
+      end
+      return @prices
+    end
+
+    def getPrice(units,affiliation: nil,costCode: nil)
+      if @prices.nil?
+        loadPrices()
+      end
+      affId = @@affiliation2id[affiliation]
+      affId = (affId.nil? || !@prices.include?(affId)) ? 0 : affId
+      costId = costCode.nil? ? 0 : costCode
+      price = 0
+      if affId == 0
+        if @prices[affId].include? costId
+          price = @prices[affId][costId]
+        end
+      else
+        if @prices[affId].include? costId
+          price = @prices[affId][costId]
+        else
+          price = @prices[affId][0]
+        end
+      end
+      return units.to_f * price
+    end
+
+    def getBcodes(verbose=false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key,
+                        "action" => "getbcodes")
+      result = makeRequest(req,__method__,verbose)
+      data = csv2dict(result.body,"Bcode",headerRow: 0)
+      return data
+    end
+
   end
 end

@@ -8,3 +8,4 @@ div#ppms_date_form label.noblock { display: inline; }
 span.promoted { color: red; }
 p.threshold { color: red; }
 td.threshold { color: red; }
+td.price { text-align: right; }

@@ -48,7 +48,7 @@ module PPMS
     def self.included(base)
       base.class_eval do
 
-        def cost_centre
+        def ppms_cost_centre
           swag = nil
           cf = CustomField.find_by(name: 'Cost Centre', type: 'ProjectCustomField')
           code = self.custom_values.find_by(custom_field: cf)

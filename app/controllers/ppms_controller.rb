@@ -126,15 +126,13 @@ class PpmsController < ApplicationController
     if gp.nil?
       while ! project.parent.nil?
         project = project.parent
-#        $ppmslog.debug("Checking parent '#{project.name}'")
         gp = ppms.getGroup(project)
         if !gp.nil?
-#          $ppmslog.debug("Found parent '#{gp["heademail"]}'")
           return gp["heademail"]
         end
       end
     else
-     return gp["heademail"]
+      return gp["heademail"]
     end
     $ppmslog.info("Failed to look up group '#{iproj.name}'")
     return nil
@@ -154,24 +152,22 @@ class PpmsController < ApplicationController
     end
     io = StringIO.new("","w")
     io.printf("#{ l(:ppms_report_title) }: #{@intervaltitle}\n\n")
-    io.printf("OrderID,ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues,Logs\n")
+    io.printf("OrderID,ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues\n")
     entries.values.each do |ent|
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
-      logs = ent[:logs].to_a.map{|x| "#{x}"}.join(" ")
       begin
         quant = ent[:quant].round(2)
         result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date])
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
-        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{quant}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}, #{logs}\n")
+        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{quant}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}\n")
       rescue PPMS::PPMS_Error => pe
         $ppmslog.error(pe.message)
         $ppmslog.error(pe.backtrace.join("\n"))
       end
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
-#    $ppmslog.debug("Filename: #{fn}")
     send_data(io.string,filename: fn)
   end
 
@@ -194,7 +190,6 @@ class PpmsController < ApplicationController
       io.printf("#{ent[:email]}, #{ent[:swag]}, #{codename},#{quant}\n")
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
-#    $ppmslog.debug("Filename: #{fn}")
     send_data(io.string,filename: fn)
   end
 
@@ -216,7 +211,6 @@ class PpmsController < ApplicationController
     # for orphans: time log id, issue id, user (if any), code (if any), hours
     #
     # separate out billed and not yet billed
-#    $ppmslog.debug("In 'show', format='#{params['format']}'")
     set_up_time(params,true)
     ppms = PPMS::PPMS.new()
     service = ppms.getServiceID()
@@ -229,6 +223,7 @@ class PpmsController < ApplicationController
     @leaders = Hash.new
     keyset = Set.new
     @billed = Hash.new
+    costCodes = Hash.new
     TimeEntry.where(spent_on: @from..(@to-1)).includes(:issue).includes(:project).each do |log|
       next unless projects.include? log.project_id
       next if nc_activities.include? log.activity_id
@@ -248,7 +243,14 @@ class PpmsController < ApplicationController
       erm = EmailRavenMap.find_by(email: who) unless who.nil?
       raven = (who.nil? || erm.nil?) ? nil : erm.raven
       swag = iss.cost_centre
-      cc = CostCode.find_by(code: swag)
+      if !costCodes.include?(swag)
+        begin
+          costCodes[swag] = CostCode.find_by(code: swag)
+        rescue
+          costCodes[swag] = nil
+        end
+      end
+      cc = costCodes[swag]
       code = cc.nil? ? nil : cc.ref
       if raven.nil? || code.nil?
         if @orphans.include? iss.id
@@ -272,7 +274,8 @@ class PpmsController < ApplicationController
                            quant: log.hours, date: log.spent_on, email: who,
                            iss: Set.new([iss.id]), logs: Set.new([log.id]),
                            project: Set.new([proj]),
-                           swag: swag, key: key, promoted: promoted}
+                           swag: swag, key: key, promoted: promoted,
+                           teo: teo.order_id}
           end
         else
           if keyset.include? key
@@ -302,6 +305,26 @@ class PpmsController < ApplicationController
       if e[:quant] > @thresh
         @warnings.append([e[:quant].round(2),e[:project],e[:swag]])
       end
+      cc = costCodes[e[:swag]]
+      begin
+        e[:price] = sprintf("%.2f",ppms.getPrice(e[:quant],affiliation: cc.affiliation, costCode: cc.ref))
+        e[:affil] = cc.affiliation
+      rescue
+        e[:price] = 0
+        e[:affil] = "missing"
+      end
+    end
+    @billed.keys().each do |k|
+      e = @billed[k]
+      cc = costCodes[e[:swag]]
+      e[:project] = reduceProjSet(e[:project])
+      begin
+        e[:price] = sprintf("%.2f",ppms.getPrice(e[:quant],affiliation: cc.affiliation, costCode: cc.ref))
+        e[:affil] = cc.affiliation
+      rescue
+        e[:price] = 0
+        e[:affil] = "missing"
+      end
     end
     @bnums = @billed.keys.sort
     @params = params
@@ -325,7 +348,7 @@ class PpmsController < ApplicationController
   def audit_project_codes
     @proj_cost_code_bad = Set.new
     Project.all.each do |proj|
-      cc = proj.cost_centre
+      cc = proj.ppms_cost_centre
       next if cc.nil?
         
       o = CostCode.find_by(code: cc)

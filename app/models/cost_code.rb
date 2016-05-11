@@ -41,8 +41,9 @@ class CostCode < ActiveRecord::Base
                         ref: proj['ProjectRef'])
         $ppmslog.info("Adding cost code '#{code}'")
       else
-        if cc.name != proj['ProjectName'] || cc.code != code
+        if cc.name != proj['ProjectName'] || cc.code != code || cc.affiliation != proj['Affiliation']
           cc.name = proj['ProjectName']
+          cc.affiliation  = proj['Affiliation']
           cc.code = code
           cc.save
           $ppmslog.info("Updating cost code '#{code}' (ref #{cc.code})")
