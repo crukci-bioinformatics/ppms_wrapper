@@ -303,7 +303,7 @@ class PpmsController < ApplicationController
       e = @entries[k]
       e[:project] = reduceProjSet(e[:project])
       if e[:quant] > @thresh
-        @warnings.append([e[:quant].round(2),e[:project],e[:swag]])
+        @warnings.append([e[:quant].round(2),e[:project].to_a()[0],e[:swag]])
       end
       cc = costCodes[e[:swag]]
       begin
