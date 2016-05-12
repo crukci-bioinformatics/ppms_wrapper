@@ -25,6 +25,8 @@ en:
   settings_ppms_who_can_commit_descr: "Users who can finalize billing entries being sent to PPMS"
   settings_ppms_sanity_threshold_label: "Billing Warning Threshold"
   settings_ppms_sanity_threshold_descr: "Warn if a particular billing entry exceeds this number of hours"
+  settings_ppms_require_email_label: "Researcher Email Required"
+  settings_ppms_require_email_descr: "Projects that require each issue to include a known email in the 'researcher email' field"
 
   ppms_report_title: "PPMS Billing Report"
   ppms_report_submit: "Submit"

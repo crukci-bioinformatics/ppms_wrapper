@@ -367,6 +367,12 @@ class PpmsController < ApplicationController
 
     open = IssueStatus.where(is_closed: false).map{|x| x.id} 
     pset = collectProjects(Setting.plugin_ppms['project_root'])
+    email_needed_txt = Setting.plugin_ppms['user_email_required']
+    if !email_needed_txt.nil? and !email_needed_txt.blank?
+      email_needed = collectProjects(Setting.plugin_ppms['user_email_required'])
+    else
+      email_needed = nil
+    end
     @codes_checked = Set.new
     @iss_code_missing = Set.new
     @iss_code_bad = Set.new
@@ -386,10 +392,12 @@ class PpmsController < ApplicationController
       end
       email = iss.researcher
       email = email.downcase unless email.nil?
-      if email.nil?
-        @iss_email_missing.add(iss)
-      elsif EmailRavenMap.find_by(email: email).nil?
-        @iss_email_bad.add(iss)
+      if email_needed.nil? or email_needed.include?(iss.project_id)
+        if email.nil?
+          @iss_email_missing.add(iss)
+        elsif EmailRavenMap.find_by(email: email).nil?
+          @iss_email_bad.add(iss)
+        end
       end
     end
     audit_project_codes
