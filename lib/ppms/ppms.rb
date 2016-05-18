@@ -47,7 +47,7 @@ module PPMS
       @prices = nil
     end
 
-    def makeRequest(req,tag,verbose)
+    def makeRequest(req,tag,verbose: false)
       result = nil
       Net::HTTP.start(@uri.host,@uri.port, :use_ssl => true) do |conn|
         result = conn.request(req)
@@ -65,18 +65,18 @@ module PPMS
       return result
     end
 
-    def isConnected(verbose=false)
+    def isConnected(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getsystems", "format" => "json")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return false if result.nil?
       return result.code == "200"
     end
 
-    def getUser(id,verbose=false)
+    def getUser(id,verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
@@ -92,10 +92,10 @@ module PPMS
       return data
     end
 
-    def listUsers(verbose=false)
+    def listUsers(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getusers")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         data = result.body.split.map{|x| CGI.unescapeHTML(x)}
@@ -109,7 +109,7 @@ module PPMS
     def getSystems(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getsystems")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       data = csv2dict(result.body,"System id")
       return data
@@ -118,7 +118,7 @@ module PPMS
     def getSystemUsers(system,verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getsysrights", "id" => system)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       data = result.body.split.map{|x| x.split(":")[1]}
       return data
@@ -131,7 +131,7 @@ module PPMS
       end
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getservices", "coreid" => core)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       data = csv2dict(result.body,"Name")
       return data
@@ -142,19 +142,19 @@ module PPMS
       return data[name]["Service id"]
     end
 
-    def getProjects(verbose=false)
+    def getProjects(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       data = JSON.parse(result.body)
       return data
     end
 
-    def getGroups(verbose=false)
+    def getGroups(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getgroups")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         data = result.body.split
@@ -165,7 +165,7 @@ module PPMS
       return data
     end
 
-    def getGroup(gp,verbose=false)
+    def getGroup(gp,verbose: false)
       cf = CustomField.find_by(name: 'PPMS Group ID')
       gpname = nil
       if cf
@@ -178,7 +178,7 @@ module PPMS
       gpname = I18n.transliterate(gp.name.strip) if gpname.blank?
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         tdata = csv2dict(result.body,"unitlogin")
@@ -190,10 +190,10 @@ module PPMS
       return data
     end
 
-    def getOrders(verbose=false)
+    def getOrders(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getorders")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         data = csv2dict(result.body,"Order ref.",headerRow: 1)
@@ -204,10 +204,10 @@ module PPMS
       return data
     end
 
-    def getOrder(id,verbose=false)
+    def getOrder(id,verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getorderlines", "orderref" => id)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
         data = csv2dict(result.body,"Order ID",headerRow: 0)
@@ -218,7 +218,7 @@ module PPMS
       return data
     end
 
-    def submitOrder(service,login,quant,project,cdate,verbose=true)
+    def submitOrder(service,login,quant,project,cdate,verbose: false)
       ddate = cdate.to_s
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
@@ -230,7 +230,7 @@ module PPMS
                         "accepted" => true,
                         "completed" => true,
                         "completeddate" => ddate)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       ok = /^\d+$/ =~ result.body
       if ok.nil?
         raise PPMS_Error.new(result.body)
@@ -238,12 +238,12 @@ module PPMS
       return result.body.to_i
     end
 
-    def loadPrices(verbose=false)
+    def loadPrices(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "getpriceslist",
                         "format" => "csv")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       rows = ::CSV.parse(result.body)
       hdrRow = rows[0].map{|x| x.strip}
       affCol = hdrRow.find_index("affiliationid")
@@ -284,11 +284,11 @@ module PPMS
       return units.to_f * price
     end
 
-    def getBcodes(verbose=false)
+    def getBcodes(verbose: false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "getbcodes")
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest(req,__method__,verbose: verbose)
       data = csv2dict(result.body,"Bcode",headerRow: 0)
       return data
     end

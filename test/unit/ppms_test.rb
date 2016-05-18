@@ -2,7 +2,7 @@ require 'test_helper'
 
 class PPMSTest < Minitest::Test
 
-  @@test_key = "jpJ1rsqIVhhc1UwbYACHnu3LAIYQnLBS"
+  @@test_key = "2TSryp1TB5j2LLShHsn5pGJ5Q2o92hy"
   @@test_bad_key = "zork"
   @@test_url = "ppms.eu/cruk-ci-test"
   @@test_user = "gb455"
@@ -12,13 +12,13 @@ class PPMSTest < Minitest::Test
 
   def test_connectivity
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    rv = ppms.isConnected(verbose=@@verbose)
+    rv = ppms.isConnected(verbose: @@verbose)
     assert rv
   end
 
   def test_no_host
     ppms = PPMS::PPMS.new(host: @@test_url+"zork",key: @@test_key)
-    rv = ppms.isConnected(verbose=@@verbose)
+    rv = ppms.isConnected(verbose: @@verbose)
     assert !rv
   end
 
@@ -30,7 +30,7 @@ class PPMSTest < Minitest::Test
 
   def test_user
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    user = ppms.getUser(@@test_user,verbose=@@verbose)
+    user = ppms.getUser(@@test_user,verbose: @@verbose)
     assert(!user.nil?)
     assert_equal(user['lname'],"Brown")
     assert_equal(user['fname'],"Gordon")
@@ -38,19 +38,19 @@ class PPMSTest < Minitest::Test
 
   def test_unknown_user
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    user = ppms.getUser(@@test_bad_user,verbose=@@verbose)
+    user = ppms.getUser(@@test_bad_user,verbose: @@verbose)
     assert(user.nil?)
   end
 
   def test_known_user_bad_key
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_bad_key)
-    user = ppms.getUser(@@test_bad_user,verbose=@@verbose)
+    user = ppms.getUser(@@test_bad_user,verbose: @@verbose)
     assert(user.nil?)
   end
 
   def test_list_users
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    users = ppms.listUsers(verbose=@@verbose)
+    users = ppms.listUsers(verbose: @@verbose)
     assert(!users.nil?)
   end
 
@@ -76,16 +76,16 @@ class PPMSTest < Minitest::Test
 
   def test_get_orders
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    data = ppms.getOrders(verbose=@@verbose)
+    data = ppms.getOrders(verbose: @@verbose)
     assert(!data.nil?)
-    assert(data.include? '49')
+    assert(data.include? '698')
   end
 
   def test_get_order
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    d1 = ppms.getOrders(verbose=@@verbose)
+    d1 = ppms.getOrders(verbose: @@verbose)
     id = d1.keys()[0]
-    data = ppms.getOrder(id,verbose=@@verbose)
+    data = ppms.getOrder(id,verbose: @@verbose)
     assert(!data.nil?)
   end
 
@@ -107,15 +107,10 @@ class PPMSTest < Minitest::Test
   def test_get_group
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
     group = Project.create(name: 'Odom',is_public: false)
-    printf("b\n")
     data = ppms.getGroup(group)
-    printf('c')
     assert(!data.nil?)
-    printf('d')
     assert(data.include? 'unitlogin')
-    printf('e')
     assert(data['unitname'] == 'Odom Group')
-    printf('f')
   end
 
 end
