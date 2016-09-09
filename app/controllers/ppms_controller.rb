@@ -2,10 +2,12 @@ require 'set'
 require 'i18n'
 
 require 'ppms/utils'
+require 'bioinf_common/utils'
 
 class PpmsController < ApplicationController
 
   include PPMS::Utilities
+  include BioinfCommon::Utilities
 
   unloadable
 

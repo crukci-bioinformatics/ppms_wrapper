@@ -44,6 +44,7 @@ module PPMS
       @host = host.nil? ? Setting.plugin_ppms['api_url'] : host
       @key = key.nil? ? Setting.plugin_ppms['api_key'] : key
       @uri = URI("https://#{@host}/pumapi/")
+      @uri2 = URI("https://#{@host}/API2/")
       @prices = nil
     end
 
@@ -94,7 +95,7 @@ module PPMS
 
     def listUsers(verbose: false)
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getusers")
+      req.set_form_data("apikey" => @key, "action" => "getusers", "active" => "true")
       result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
@@ -153,11 +154,13 @@ module PPMS
 
     def getGroups(verbose: false)
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getgroups")
+      req.set_form_data("apikey" => @key, "action" => "getgroups","active" => "true" )
       result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
-        data = result.body.split
+#        print result.body
+        data = result.body.split("\n")
+        data = map(lambda x.x.strip(),data)
       rescue
         $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
         data = nil
@@ -178,6 +181,21 @@ module PPMS
       gpname = I18n.transliterate(gp.name.strip) if gpname.blank?
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
+      result = makeRequest(req,__method__,verbose: verbose)
+      return result if result.nil?
+      begin
+        tdata = csv2dict(result.body,"unitlogin")
+        data = tdata[tdata.keys()[0]]
+      rescue
+        $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
+        data = nil
+      end
+      return data
+    end
+
+    def getGroupByName(gp,verbose: false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gp)
       result = makeRequest(req,__method__,verbose: verbose)
       return result if result.nil?
       begin
@@ -291,6 +309,22 @@ module PPMS
       result = makeRequest(req,__method__,verbose: verbose)
       data = csv2dict(result.body,"Bcode",headerRow: 0)
       return data
+    end
+
+    def getUserReport(verbose: false)
+      req = Net::HTTP::Post.new(@uri2)
+      req.set_form_data("apikey" => @key,
+                        "action" => "Report217",
+                        "dateformat" => "print",
+                        "outformat" => "json")
+      result = makeRequest(req,__method__,verbose: verbose)
+      return result if result.nil?
+      data = JSON.parse(result.body)
+      dict = Hash.new()
+      data.each do |user|
+        dict[user['Login']] = user
+      end
+      return dict
     end
 
   end
