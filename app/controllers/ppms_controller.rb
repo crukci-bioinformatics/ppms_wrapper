@@ -222,6 +222,7 @@ class PpmsController < ApplicationController
 
     @entries = Hash.new
     @orphans = Hash.new
+    @missingIssue = Array.new
     @leaders = Hash.new
     keyset = Set.new
     @billed = Hash.new
@@ -231,6 +232,10 @@ class PpmsController < ApplicationController
       next if nc_activities.include? log.activity_id
       iss = log.issue
       proj = log.project
+      if iss.nil?
+        @missingIssue << log
+        next
+      end
       who = iss.researcher
       promoted = false
       if who.blank? || EmailRavenMap.find_by(email: who).nil?
