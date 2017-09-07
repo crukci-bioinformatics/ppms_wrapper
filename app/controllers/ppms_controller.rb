@@ -220,6 +220,7 @@ class PpmsController < ApplicationController
 
     @entries = Hash.new
     @orphans = Hash.new
+    @missingIssue = Array.new
     @leaders = Hash.new
     keyset = Set.new
     @billed = Hash.new
@@ -229,6 +230,10 @@ class PpmsController < ApplicationController
       next if nc_activities.include? log.activity_id
       iss = log.issue
       proj = log.project
+      if iss.nil?
+        @missingIssue << log
+        next
+      end
       who = iss.researcher
       promoted = false
       if who.blank? || EmailRavenMap.find_by(email: who).nil?
@@ -303,7 +308,7 @@ class PpmsController < ApplicationController
       e = @entries[k]
       e[:project] = reduceProjSet(e[:project])
       if e[:quant] > @thresh
-        @warnings.append([e[:quant].round(2),e[:project],e[:swag]])
+        @warnings.append([e[:quant].round(2),e[:project].to_a()[0],e[:swag]])
       end
       cc = costCodes[e[:swag]]
       begin

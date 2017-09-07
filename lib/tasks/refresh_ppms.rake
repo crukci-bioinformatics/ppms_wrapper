@@ -1,4 +1,4 @@
-require_dependency File.expand_path(File.dirname(__FILE__)+'/../ppms/ppms')
+require File.expand_path(File.dirname(__FILE__)+'/../ppms/ppms')
 
 namespace :redmine do
   namespace :ppms do

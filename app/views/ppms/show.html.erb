@@ -86,27 +86,44 @@ or
     <% end %>
   </tbody>
 </table>
-<hr>
-<h4>Orphans</h4>
-<table class="ppms_report">
-  <thead><tr><th>Issue</th><th>Project</th><th>Email</th><th>Cost Code</th><th>Hours</th></tr></thead>
-  <tbody>
-  <% @orphans.keys.sort.each do |orphid| %>
-    <tr>
-      <% orph = @orphans[orphid] %>
-      <% orph[:quant] = orph[:quant].round(2) %>
-      <td><%= render partial: "issue_link", locals: {iss: orph[:issue]} %></td>
-      <td><%= render partial: "project_link", locals: {p: orph[:project]} %></td>
-      <td><%= orph[:who] %>
-          <% if orph[:promoted] %><span class="promoted">*</span><% end %></td>
-      </td>
-      <td><%= orph[:swag] %></td>
-      <td><%= orph[:quant] %></td>
-    </tr>
-  <% end %>
-  </tbody>
-</table>
-
+<% if @orphans.length > 0 %>
+  <hr>
+  <h4>Orphans</h4>
+  <table class="ppms_report">
+    <thead><tr><th>Issue</th><th>Project</th><th>Email</th><th>Cost Code</th><th>Hours</th></tr></thead>
+    <tbody>
+    <% @orphans.keys.sort.each do |orphid| %>
+      <tr>
+        <% orph = @orphans[orphid] %>
+        <% orph[:quant] = orph[:quant].round(2) %>
+        <td><%= render partial: "issue_link", locals: {iss: orph[:issue]} %></td>
+        <td><%= render partial: "project_link", locals: {p: orph[:project]} %></td>
+        <td><%= orph[:who] %>
+            <% if orph[:promoted] %><span class="promoted">*</span><% end %></td>
+        </td>
+        <td><%= orph[:swag] %></td>
+        <td><%= orph[:quant] %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+<% end %>
+<% if @missingIssue.length > 0 %>
+  <hr>
+  <h4>Missing Issues</h4>
+  <table>
+    <thead><tr><th>ID</th><th>Project</th><th>User</th><th>Hours</th><th>Date</th></tr></thead>
+    <% @missingIssue.each do |log| %>
+      <tr>
+        <td><%= render partial: "timeentry_link", locals: {log: log.id} %></td>
+        <td><%= log.project.name %></td>
+        <td><%= log.user.name %></td>
+        <td><%= log.hours %></td>
+        <td><%= log.spent_on %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
 <% if false %>
 <hr>
 <h3>Parameters</h3>

@@ -1,6 +1,6 @@
-require_dependency 'ppms/initialization'
-require_dependency 'ppms/patches'
-require_dependency 'ppms/hooks'
+require 'ppms/initialization'
+require 'ppms/patches'
+require 'ppms/hooks'
 
 Redmine::Plugin.register :ppms do
   name 'PPMS plugin'
