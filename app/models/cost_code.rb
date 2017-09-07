@@ -17,7 +17,7 @@ class CostCode < ActiveRecord::Base
     #  b) XXXX.XXXX (4 letters, a period, 4 letters)
     #  c) NNNNNN (all digits, probably 6-7 digits long)
     # The "Bcode" field should *always* match one of these patterns.
-    # The input "proj" is a has describing a PPMS project, not a Redmine
+    # The input "proj" is a hash describing a PPMS project, not a Redmine
     # ActiveRecord object.
     code = proj['Bcode']
     mat = code =~ @@CODE_PATTERN
