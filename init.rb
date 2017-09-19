@@ -6,7 +6,7 @@ Redmine::Plugin.register :ppms do
   name 'PPMS plugin'
   author 'Gord Brown'
   description 'Wrap the API for PPMS in a Redmine plugin'
-  version '1.0.7'
+  version '1.0.8'
   url 'https://github.com/crukci-bioinformatics/ppms_wrapper'
   author_url 'http://gdbrown.org/blog'
 

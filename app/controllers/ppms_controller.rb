@@ -81,7 +81,7 @@ class PpmsController < ApplicationController
         @from = @@from_procs[params['period_type']].call
         @intervaltitle = @@label_procs[params['period_type']].call(@from,@to)
 #        else
-#          $pslog.error("Unexpected period description: '#{params['period_type']}'")
+#          $ppmslog.error("Unexpected period description: '#{params['period_type']}'")
 #          flash[:error] = l(:report_bad_period_descr,:period => params['period_type'])
 #          okay = false
 #        end
@@ -111,7 +111,7 @@ class PpmsController < ApplicationController
           okay = false
         end
       else
-        $pslog.error("Unexpected date type '#{date_type}'")
+        $ppmslog.error("Unexpected date type '#{date_type}'")
         flash[:error] = l(:report_bad_date_type,:datetype => params['date_type'])
         okay = false
       end
@@ -211,7 +211,11 @@ class PpmsController < ApplicationController
     # for orphans: time log id, issue id, user (if any), code (if any), hours
     #
     # separate out billed and not yet billed
-    set_up_time(params,true)
+    okay = set_up_time(params,true)
+    if !okay
+      redirect_to "/ppms/index"
+      return
+    end
     ppms = PPMS::PPMS.new()
     serviceHash = ppms.getServices()
     services = serviceHash.transform_values{|v| v["Service id"]}
