@@ -213,7 +213,8 @@ class PpmsController < ApplicationController
     # separate out billed and not yet billed
     set_up_time(params,true)
     ppms = PPMS::PPMS.new()
-    service = ppms.getServiceID()
+    serviceHash = ppms.getServices()
+    services = serviceHash.transform_values{|v| v["Service id"]}
 #    swags = ppms.getProjects()
     projects = collectProjects(Setting.plugin_ppms['project_root'])
     nc_activities = collectActivities(Setting.plugin_ppms['non_chargeable'])
@@ -275,7 +276,7 @@ class PpmsController < ApplicationController
             @billed[id][:logs].add(log.id)
             @billed[id][:project].add(proj)
           else
-            @billed[id] = {projectid: code, serviceid: service, login: raven,
+            @billed[id] = {projectid: code, serviceid: services[iss.service], login: raven,
                            quant: log.hours, date: log.spent_on, email: who,
                            iss: Set.new([iss.id]), logs: Set.new([log.id]),
                            project: Set.new([proj]),
@@ -290,7 +291,7 @@ class PpmsController < ApplicationController
             @entries[key][:logs].add(log.id)
             @entries[key][:project].add(proj)
           else
-            @entries[key] = {projectid: code, serviceid: service, login: raven,
+            @entries[key] = {projectid: code, serviceid: services[iss.service], login: raven,
                              quant: log.hours, date: log.spent_on, email: who,
                              iss: Set.new([iss.id]), logs: Set.new([log.id]),
                              project: Set.new([proj]),
@@ -363,12 +364,22 @@ class PpmsController < ApplicationController
     end
   end
 
+  def update_service_names(ppms)
+    rec = ProjectCustomField.find_by(name: 'Service')
+    services = ppms.getServices()
+    names = services.map{|k,v| v["Name"]}
+    rec.possible_values = names
+    rec.save
+  end
+   
   def update
     ppms = PPMS::PPMS.new()
     $ppmslog.info("Refreshing Raven IDs from PPMS")
     EmailRavenMap.refresh(ppms)
     $ppmslog.info("Refreshing cost codes from PPMS")
     CostCode.refresh(ppms)
+    $ppmslog.info("Updating services from PPMS")
+    update_service_names(ppms)
 
     open = IssueStatus.where(is_closed: false).map{|x| x.id} 
     pset = collectProjects(Setting.plugin_ppms['project_root'])

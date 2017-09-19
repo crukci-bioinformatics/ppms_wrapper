@@ -24,3 +24,7 @@
 <p><label for='settings_warning_threshold'><span title="<%= l(:settings_ppms_sanity_threshold_descr) %>"><%= l(:settings_ppms_sanity_threshold_label) %></span></label>
    <%= text_field_tag 'settings[warning_threshold]', @settings['warning_threshold'] %>
 </p>
+
+<p><label for='settings_default_service'><span title="<%= l(:settings_ppms_default_service_descr) %>"><%= l(:settings_ppms_default_service_label) %></span></label>
+   <%= text_field_tag 'settings[default_service]', @settings['default_service'] %>
+</p>

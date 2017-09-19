@@ -1,8 +1,11 @@
 require 'active_support/core_ext/hash/keys'
+require 'ppms/defaults'
 
 module PPMS
 
   module IssuePatch
+    include PPMS::Defaults
+
     def self.included(base)
       base.class_eval do
         before_validation :ensure_valid_custom_fields
@@ -38,6 +41,24 @@ module PPMS
 
         def warnings
           @warnings ||= ActiveModel::Errors.new(self)
+        end
+
+        def service
+          cf = ProjectCustomField.find_by(name: PPMS_SERVICE_NAME)
+          proj = self.project
+          srv = proj.custom_values.find_by(custom_field: cf)
+          if srv.nil? || srv.value == ""
+            while (! proj.parent_id.nil?) && (srv.nil? || srv.value == "")
+              proj = proj.parent
+              srv = proj.custom_values.find_by(custom_field: cf)
+            end
+          end
+          if srv.nil?
+            srv = Setting.plugin_ppms['default_service']
+          else
+            srv = srv.value
+          end
+          return srv
         end
 
       end

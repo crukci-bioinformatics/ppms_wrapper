@@ -134,6 +134,7 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       data = csv2dict(result.body,"Name")
+      data = data.select{|k,v| v["Group"] != "Admin"}
       return data
     end
 

@@ -27,6 +27,8 @@ en:
   settings_ppms_sanity_threshold_descr: "Warn if a particular billing entry exceeds this number of hours"
   settings_ppms_require_email_label: "Researcher Email Required"
   settings_ppms_require_email_descr: "Projects that require each issue to include a known email in the 'researcher email' field"
+  settings_ppms_default_service_label: "Default Service"
+  settings_ppms_default_service_descr: "Default service for billing, if no other service is specified"
 
   ppms_report_title: "PPMS Billing Report"
   ppms_report_submit: "Submit"
