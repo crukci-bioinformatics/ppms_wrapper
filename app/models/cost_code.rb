@@ -35,16 +35,23 @@ class CostCode < ActiveRecord::Base
       next if code.nil?
       seen.add(proj['ProjectRef'].to_i)
       cc = known_codes[proj['ProjectRef'].to_i]
+      new_date =  proj['ExpirationDate']
+      if ! new_date.nil?
+        new_date = new_date.to_date
+      end
       if cc.nil?
         CostCode.create(name: proj['ProjectName'],
                         code: code,
-                        ref: proj['ProjectRef'])
+                        ref: proj['ProjectRef'],
+                        affiliation: proj['Affiliation'],
+                        expiration: new_date)
         $ppmslog.info("Adding cost code '#{code}'")
       else
-        if cc.name != proj['ProjectName'] || cc.code != code || cc.affiliation != proj['Affiliation']
+        if cc.name != proj['ProjectName'] || cc.code != code || cc.affiliation != proj['Affiliation'] || cc.expiration != new_date
           cc.name = proj['ProjectName']
           cc.affiliation  = proj['Affiliation']
           cc.code = code
+          cc.expiration = new_date
           cc.save
           $ppmslog.info("Updating cost code '#{code}' (ref #{cc.code})")
         end

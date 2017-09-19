@@ -4,7 +4,7 @@ require 'ppms/defaults'
 module PPMS
 
   module IssuePatch
-    include PPMS::Defaults
+    include Defaults
 
     def self.included(base)
       base.class_eval do
@@ -91,6 +91,13 @@ module PPMS
           billed = ! TimeEntryOrder.find_by(time_entry_id: self.id).nil?
           if billed
             errors.add("time entry"," cannot be altered because it is already billed.")
+          end
+          cc = self.issue.cost_centre
+          if ! cc.nil?
+            ccObj = CostCode.find_by(code: cc)
+            if ! ccObj.expiration.nil? && ccObj.expiration < self.spent_on
+              errors.add("time entry"," cannot be added because cost code #{cc} expired on #{ccObj.expiration}")
+            end
           end
         end
       end

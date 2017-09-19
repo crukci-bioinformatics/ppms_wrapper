@@ -145,7 +145,7 @@ module PPMS
 
     def getProjects(verbose=false)
       req = Net::HTTP::Post.new(@uri)
-      req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json")
+      req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json", "ExpirationDate" => "true")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       data = JSON.parse(result.body)

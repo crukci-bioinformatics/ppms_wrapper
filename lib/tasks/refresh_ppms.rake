@@ -24,5 +24,22 @@ namespace :redmine do
       EmailRavenMap.check_groups(ppms,false)
     end
 
+    desc "Carry out a refresh of all cached info from PPMS"
+    task :refresh_cache_ppms => :environment do
+      $ppmslog.info("Refreshing cache of PPMS data: emails, cost codes, services")
+      ppms = PPMS::PPMS.new()
+      $ppmslog.info("Refreshing EmailRavenMap...")
+      EmailRavenMap.refresh(ppms)
+      $ppmslog.info("Refreshing CostCodes...")
+      CostCode.refresh(ppms)
+      $ppmslog.info("Refreshing Services...")
+      rec = ProjectCustomField.find_by(name: 'Service')
+      services = ppms.getServices()
+      names = services.map{|k,v| v["Name"]}
+      rec.possible_values = names
+      rec.save
+      $ppmslog.info("Completed refresh")
+    end
+
   end
 end
