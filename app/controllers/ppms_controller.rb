@@ -240,6 +240,7 @@ class PpmsController < ApplicationController
         next
       end
       who = iss.researcher
+      srvc = services[iss.service()]
       promoted = false
       if who.blank? || EmailRavenMap.find_by(email: who).nil?
         if @leaders.include? log.project_id
@@ -269,7 +270,7 @@ class PpmsController < ApplicationController
           @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj, promoted: promoted}
         end
       else
-        key = "#{raven}_#{code}"
+        key = "#{raven}_#{code}_#{srvc}"
         teo = TimeEntryOrder.find_by(time_entry_id: log.id)
         if ! teo.nil?
           id = key
