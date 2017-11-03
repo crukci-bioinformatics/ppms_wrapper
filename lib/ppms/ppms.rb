@@ -12,7 +12,7 @@ module PPMS
   class PPMS
     include ::I18n
     
-    @@affiliation2id = {'Internal' => 1,
+    @@affiliation2id = {'CRUK' => 1,
                         'Charity' => 2,
                         'RC / UKGov' => 5,
                         'EC / ERC' => 6,
