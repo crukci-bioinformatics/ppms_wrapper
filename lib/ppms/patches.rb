@@ -95,7 +95,9 @@ module PPMS
           cc = self.issue.cost_centre
           if ! cc.nil?
             ccObj = CostCode.find_by(code: cc)
-            if ! ccObj.expiration.nil? && ccObj.expiration < self.spent_on
+            if ccObj.nil? 
+              errors.add("time entry"," cannot be added because cost code #{cc} does not exist.")
+            elsif ! ccObj.expiration.nil? && ccObj.expiration < self.spent_on
               errors.add("time entry"," cannot be added because cost code #{cc} expired on #{ccObj.expiration}")
             end
           end
