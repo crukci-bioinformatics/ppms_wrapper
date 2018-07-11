@@ -19,9 +19,9 @@ module PPMS
               if x.custom_field_id == email_id
                 email = EmailRavenMap.find_by(email: x.value)
                 if x.value.blank?
-                  warnings.add(:email, "Warning: researcher email not provided")
+                  warnings.add(:email, "Researcher email not provided")
                 elsif email.nil?
-                  warnings.add(:email, "Warning: researcher email not recognized: '#{x.value}'")
+                  warnings.add(:email, "Researcher email not recognized: '#{x.value}'")
                 end
               elsif x.custom_field_id == code_id
                 next if x.value.nil? || x.value == ''
