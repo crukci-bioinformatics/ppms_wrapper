@@ -87,18 +87,25 @@ module PPMS
     def self.included(base)
       base.class_eval do
         validate :time_entry_not_billed
+
+        def warnings
+          @warnings ||= ActiveModel::Errors.new(self)
+        end
+
         def time_entry_not_billed
           billed = ! TimeEntryOrder.find_by(time_entry_id: self.id).nil?
           if billed
             errors.add("time entry"," cannot be altered because it is already billed.")
           end
-          cc = self.issue.cost_centre
-          if ! cc.nil?
-            ccObj = CostCode.find_by(code: cc)
-            if ccObj.nil? 
-              errors.add("time entry"," cannot be added because cost code #{cc} does not exist.")
-            elsif ! ccObj.expiration.nil? && ccObj.expiration < self.spent_on
-              errors.add("time entry"," cannot be added because cost code #{cc} expired on #{ccObj.expiration}")
+          if !self.issue.nil?
+            cc = self.issue.cost_centre
+            if ! cc.nil?
+              ccObj = CostCode.find_by(code: cc)
+              if ccObj.nil? 
+                warnings.add("time entry","Time log was added but cost code #{cc} does not exist.")
+              elsif ! ccObj.expiration.nil? && ccObj.expiration < self.spent_on
+                errors.add("time entry"," cannot be added because cost code #{cc} expired on #{ccObj.expiration}")
+              end
             end
           end
         end
