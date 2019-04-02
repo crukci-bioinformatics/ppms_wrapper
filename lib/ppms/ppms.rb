@@ -18,7 +18,8 @@ module PPMS
                         'EC / ERC' => 6,
                         'WT' => 7,
                         'Commercial' => 8,
-                        'Core' => 9}
+                        'Core' => 9,
+                        'F.I.R.' => 8}
 
     def csv2dict(data,indexKey,headerRow: 0)
       rows = ::CSV.parse(data)
