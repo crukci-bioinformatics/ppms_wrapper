@@ -3,6 +3,7 @@ require 'json'
 require 'logger'
 require 'csv'
 require 'cgi'
+require 'ostruct'
 
 module PPMS
 
@@ -12,6 +13,7 @@ module PPMS
   class PPMS
     include ::I18n
     
+    @@serviceID = 7
     @@affiliation2id = {'CRUK' => 1,
                         'Charity' => 2,
                         'RC / UKGov' => 5,
@@ -159,7 +161,8 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = result.body.split
+        untrimmed_data = result.body.split("\n")
+        data = untrimmed_data.map{|x| x.strip}
       rescue
         $ppmslog.error("Failed #{__method__}: result = '#{result.body}'") if verbose
         data = nil
@@ -190,6 +193,51 @@ module PPMS
         data = nil
       end
       return data
+    end
+
+    def issue2User(iss,verbose=false)
+      email = iss.researcher
+      user = nil
+      if !email.nil?
+        $ppmslog.info("Researcher email: #{email}") if verbose
+        erm = EmailRavenMap.find_by(email: email)
+        if erm.nil?
+          $ppmslog.info("Researcher email #{email} not found in EmailRavenMap")
+        else
+          user = getUser(erm.raven)
+          # should be found, but if not it'll just be 'nil' anyway.
+          if user.nil?
+            $ppmslog.info("Researcher email in ERM but unsuccessful lookup from PPMS")
+          end
+        end
+      else
+        $ppmslog.info("No email associated with issue, trying project")
+      end
+      if user.nil?
+        proj = iss.project
+        group = nil
+        while group.nil? && !proj.nil?
+          $ppmslog.info("Trying project #{proj.name}...")
+          group = getGroup(proj,verbose=true)
+          if group.nil?
+            proj = proj.parent
+          else
+            $ppmslog.info("Found group for #{proj.name}...")
+            break
+          end
+        end
+        if !group.nil?
+          email = group['heademail']
+          erm = EmailRavenMap.find_by(email: email)
+          if erm.nil?
+            $ppmslog.info("Group email not in ERM: #{email}")
+          else
+            $ppmslog.info("Group email: #{email}  Raven: #{erm.raven}")
+            user = erm.raven
+          end
+        end
+      end
+      return user
     end
 
     def getOrders(verbose=false)
@@ -248,42 +296,73 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       rows = ::CSV.parse(result.body)
       hdrRow = rows[0].map{|x| x.strip}
+      prioCol = hdrRow.find_index("priority")
+      serviceCol = hdrRow.find_index("service")
       affCol = hdrRow.find_index("affiliationid")
       projCol = hdrRow.find_index("projectid")
       priceCol = hdrRow.find_index("Price")
-      @prices = Hash.new(default=0)
+      @prices = Array.new()
       rows[1..rows.length-1].each do |row|
-        affId = row[affCol].to_i
-        projId = row[projCol].to_i
-        price = row[priceCol].to_f
-        if !@prices.include?(affId)
-          @prices[affId] = Hash.new(default=0)
-        end
-        @prices[affId][projId] = price
+        @prices << OpenStruct.new(:priority => row[prioCol].to_i,
+                                  :service => (row[serviceCol].to_i + @@serviceID * 10**4).to_s,
+                                  :affiliation => row[affCol].to_i,
+                                  :project => row[projCol].to_i,
+                                  :price => row[priceCol].to_f)
       end
       return @prices
     end
 
-    def getPrice(units,affiliation: nil,costCode: nil)
+    def dumpPrices(destination: $stderr,priceList: nil)
+      if @prices.nil?
+        loadPrices()
+      end
+      if priceList.nil?
+        priceList = @prices
+      end
+      priceList.each do |p|
+        destination.printf("prio: %1d\tserv: %3d\taff:  %d\tproj: %3d\tprice: %6.2f\n",
+                           p.priority,p.service,p.affiliation,p.project,p.price)
+      end
+      return nil
+    end
+
+    def getRate(affiliation: nil, costCode: nil, service: nil)
       if @prices.nil?
         loadPrices()
       end
       affId = @@affiliation2id[affiliation]
-      affId = (affId.nil? || !@prices.include?(affId)) ? 0 : affId
-      costId = costCode.nil? ? 0 : costCode
-      price = 0
-      if affId == 0
-        if @prices[affId].include? costId
-          price = @prices[affId][costId]
-        end
-      else
-        if @prices[affId].include? costId
-          price = @prices[affId][costId]
-        else
-          price = @prices[affId][0]
-        end
+      priceList = @prices
+      if !affId.nil?
+        priceList = priceList.select {|p| p.affiliation == affId || p.affiliation == 0}
       end
-      return units.to_f * price
+      if !costCode.nil?
+        priceList = priceList.select {|p| p.project == costCode || p.project == 0}
+      end
+      if !service.nil?
+        priceList = priceList.select {|p| p.service == service || p.service == 0}
+      end
+      if priceList.length > 1
+        topPrio = priceList.map {|p| p.priority}.min
+        priceList = priceList.select {|p| p.priority == topPrio}
+      end
+      # by now priceList should have exactly one entry.  If not, it's the caller's problem.
+      return priceList
+    end
+
+    def getPrice(units,affiliation: nil,costCode: nil, service: nil)
+      if @prices.nil?
+        loadPrices()
+      end
+      rate = getRate(affiliation: affiliation, costCode: costCode, service: service)
+      if rate.length > 1
+        raise PPMS_Error.new(sprintf("non-unique price for aff=%s,cc=%s,serv=%s",affiliation,costCode,service))
+      end
+      if rate.length == 0
+        raise PPMS_Error.new(sprintf("no matching price rule for aff=%s,cc=%s,serv=%s",affiliation,costCode,service))
+      end
+      rule = rate[0]
+      cost = units.to_f * rule.price
+      return cost
     end
 
     def getBcodes(verbose=false)

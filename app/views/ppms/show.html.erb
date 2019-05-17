@@ -12,7 +12,7 @@
 
 <table class="ppms_report">
   <thead>
-    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Issues</th></tr>
+    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issues</th></tr>
   </thead>
   <tbody>
     <% @keys.each do |k| %>
@@ -33,8 +33,12 @@
         <td><%= render partial: "project_link", collection: plist, as: :p %></td>
         <td><%= e[:affil] %></td>
         <td class="price">£<%= e[:price] %></td>
+        <td class="price">£<%= e[:rate] %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
       </tr>
+    <% end %>
+    <% if @keys.length > 0 %>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>TOTAL:</td><td class="price">£<%= @toBillTotal %></td><td></td><td></td></tr>
     <% end %>
   </tbody>
 </table>
@@ -60,7 +64,7 @@ or
 
 <table class="ppms_report">
   <thead>
-    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Issues</th></tr>
+    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issues</th></tr>
   </thead>
   <tbody>
     <% @bnums.each do |k| %>
@@ -81,8 +85,12 @@ or
         <td><%= render partial: "project_link", collection: plist, as: :p %></td>
         <td><%= e[:affil] %></td>
         <td class="price">£<%= e[:price] %></td>
+        <td class="price">£<%= e[:rate] %></td>
         <td><%= render partial: "issue_link", collection: e[:iss].to_a.sort, as: :iss %></td>
       </tr>
+    <% end %>
+    <% if @bnums.length > 0 %>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>TOTAL:</td><td class="price">£<%= @billedTotal %></td><td></td><td></td></tr>
     <% end %>
   </tbody>
 </table>

@@ -310,6 +310,7 @@ class PpmsController < ApplicationController
     @keys = keyset.to_a.sort{|a,b| @entries[a][:swag] <=> @entries[b][:swag]}
     @warnings = []
     @thresh = Setting.plugin_ppms['warning_threshold'].to_i
+    toBillTotal = 0
     @keys.each do |k|
       e = @entries[k]
       e[:project] = reduceProjSet(e[:project])
@@ -318,25 +319,38 @@ class PpmsController < ApplicationController
       end
       cc = costCodes[e[:swag]]
       begin
-        e[:price] = sprintf("%.2f",ppms.getPrice(e[:quant],affiliation: cc.affiliation, costCode: cc.ref))
+        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])
+        toBillTotal += cost
+        e[:price] = sprintf("%.2f",cost)
+        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])[0].price)
         e[:affil] = cc.affiliation
-      rescue
+      rescue => ex
+        printf("alpha: %s\n",ex)
         e[:price] = 0
+        e[:rate] = -99
         e[:affil] = "missing"
       end
     end
+    @toBillTotal = sprintf("%.2f",toBillTotal)
+    billedTotal = 0
     @billed.keys().each do |k|
       e = @billed[k]
       cc = costCodes[e[:swag]]
       e[:project] = reduceProjSet(e[:project])
       begin
-        e[:price] = sprintf("%.2f",ppms.getPrice(e[:quant],affiliation: cc.affiliation, costCode: cc.ref))
+        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])
+        billedTotal += cost
+        e[:price] = sprintf("%.2f",cost)
+        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])[0].price)
         e[:affil] = cc.affiliation
-      rescue
+      rescue => ex
+        printf("bravo: %s\n",ex)
         e[:price] = 0
+        e[:rate] = -99
         e[:affil] = "missing"
       end
     end
+    @billedTotal = sprintf("%.2f",billedTotal)
     @bnums = @billed.keys.sort
     @params = params
     if @params['format'] == 'csv'
