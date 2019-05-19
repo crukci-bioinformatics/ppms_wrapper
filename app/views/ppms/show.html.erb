@@ -98,7 +98,7 @@ or
   <hr>
   <h4>Orphans</h4>
   <table class="ppms_report">
-    <thead><tr><th>Issue</th><th>Project</th><th>Email</th><th>Cost Code</th><th>Hours</th></tr></thead>
+    <thead><tr><th>Issue</th><th>Project</th><th>Email</th><th>Cost Code</th><th>Hours</th><th>Reason</th></tr></thead>
     <tbody>
     <% @orphans.keys.sort.each do |orphid| %>
       <tr>
@@ -111,6 +111,7 @@ or
         </td>
         <td><%= orph[:swag] %></td>
         <td><%= orph[:quant] %></td>
+        <td><%= orph[:reason] %></td>
       </tr>
     <% end %>
     </tbody>

@@ -267,7 +267,17 @@ class PpmsController < ApplicationController
         if @orphans.include? iss.id
           @orphans[iss.id][:quant] += log.hours
         else
-          @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj, promoted: promoted}
+          if raven.nil? && code.nil?
+            reason = "no PPMS user found; no cost code found"
+          elsif raven.nil?
+            reason = "no PPMS user found"
+          elsif code.nil?
+            reason = "no cost code found"
+          else
+            # but then how did we get here at all?
+            reason = "unknown reason"
+          end
+          @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj, promoted: promoted,reason: reason}
         end
       else
         key = "#{raven}_#{code}_#{srvc}"
