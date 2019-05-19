@@ -268,7 +268,7 @@ module PPMS
       return data
     end
 
-    def submitOrder(service,login,quant,project,cdate,verbose=true)
+    def submitOrder(service,login,quant,project,cdate,comments,verbose=true)
       ddate = cdate.to_s
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
@@ -279,7 +279,8 @@ module PPMS
                         "projectid" => project,
                         "accepted" => true,
                         "completed" => true,
-                        "completeddate" => ddate)
+                        "completeddate" => ddate,
+                        "comments" => comments)
       result = makeRequest(req,__method__,verbose)
       ok = /^\d+$/ =~ result.body
       if ok.nil?

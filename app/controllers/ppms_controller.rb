@@ -157,7 +157,7 @@ class PpmsController < ApplicationController
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
       begin
         quant = ent[:quant].round(2)
-        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date])
+        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date],issues)
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
@@ -280,7 +280,7 @@ class PpmsController < ApplicationController
           @orphans[iss.id] = {issue: iss.id,who: who,swag: swag,quant: log.hours, project: proj, promoted: promoted,reason: reason}
         end
       else
-        key = "#{raven}_#{code}_#{srvc}"
+        key = "#{raven}_#{code}_#{srvc}_#{iss.id}"
         teo = TimeEntryOrder.find_by(time_entry_id: log.id)
         if ! teo.nil?
           id = key
