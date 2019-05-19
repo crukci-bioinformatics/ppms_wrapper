@@ -268,11 +268,11 @@ class PpmsController < ApplicationController
           @orphans[iss.id][:quant] += log.hours
         else
           if raven.nil? && code.nil?
-            reason = "no PPMS user found; no cost code found"
+            reason = "no PPMS user found; no valid cost code found"
           elsif raven.nil?
             reason = "no PPMS user found"
           elsif code.nil?
-            reason = "no cost code found"
+            reason = "no valid cost code found"
           else
             # but then how did we get here at all?
             reason = "unknown reason"
