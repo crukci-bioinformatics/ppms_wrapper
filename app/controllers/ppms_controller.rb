@@ -155,9 +155,10 @@ class PpmsController < ApplicationController
     io.printf("OrderID,ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues\n")
     entries.values.each do |ent|
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
+      issues_comment = "Redmine: #{issues}"
       begin
         quant = ent[:quant].round(2)
-        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date],issues)
+        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date],issues_comment)
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
