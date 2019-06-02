@@ -24,6 +24,13 @@ namespace :redmine do
       EmailRavenMap.check_groups(ppms,false)
     end
 
+    desc "Audit group cost codes with respect to PPMS"
+    task :audit_cost_codes => :environment do
+      $ppmslog.info("Checking group cost codes against PPMS")
+      ppms = PPMS::PPMS.new()
+      CostCode.audit_group_codes(ppms,false)
+    end
+
     desc "Carry out a refresh of all cached info from PPMS"
     task :refresh_cache_ppms => :environment do
       $ppmslog.info("Refreshing cache of PPMS data: emails, cost codes, services")

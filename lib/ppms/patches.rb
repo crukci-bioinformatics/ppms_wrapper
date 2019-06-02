@@ -1,5 +1,7 @@
 require 'active_support/core_ext/hash/keys'
 require 'ppms/defaults'
+require 'ppms/utils'
+require 'ppms/ppms'
 
 module PPMS
 
@@ -66,6 +68,7 @@ module PPMS
   end
 
   module ProjectPatch
+
     def self.included(base)
       base.class_eval do
 
@@ -75,6 +78,16 @@ module PPMS
           code = self.custom_values.find_by(custom_field: cf)
           if (! code.nil?) && (! code.value.blank?)
             swag = code.value
+          else # check to see if we can find it in PPMS
+            ppms = PPMS.new()
+            gp = ppms.getGroup(self)
+            if !gp.nil?
+              ppms_code = gp["unitbcode"]
+              ccFromTable = CostCode.find_by(code: ppms_code)
+              if !ccFromTable.nil?
+                swag = ppms_code
+              end
+            end
           end
           return swag
         end

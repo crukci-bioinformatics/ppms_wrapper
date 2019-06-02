@@ -3,8 +3,10 @@ require 'cgi'
 require 'set'
 
 require 'ppms/ppms'
+require 'ppms/utils'
 
 class CostCode < ActiveRecord::Base
+  extend PPMS::Utilities
   unloadable
 
   @@CODE_PATTERN = /^([A-Z]{4}\/\d{3})|([A-Z]{4}\.[A-Z]{4})|([0-9]+)$/
@@ -68,4 +70,42 @@ class CostCode < ActiveRecord::Base
     end
   end
 
+  def self.audit_group_codes(ppms,verbose=false)
+    pset = collectProjects(Setting.plugin_ppms['project_root'])
+    rgid = Project.find_by(name: "Research Groups").id
+    pset.delete(rgid)
+    ccIDfield = CustomField.find_by(name: 'Cost Centre')
+    Project.where(id: pset).each do |proj|
+      gp = ppms.getGroup(proj)
+      cc = proj.ppms_cost_centre
+      if gp.nil?
+        if !cc.nil?
+          $ppmslog.warn("Group '#{proj.name}': not in PPMS; cc = '#{cc}' (explicitly set)")
+          STDERR.printf("Group '#{proj.name}': not in PPMS; cc = '#{cc}' (explicitly set)\n")
+#        else
+#          $ppmslog.warn("Group '#{proj.name}': not in PPMS; no cc set")
+#          STDERR.printf("Group '#{proj.name}': not in PPMS; no cc set\n")
+        end
+      else
+        ppms_code = gp["unitbcode"]
+        ccFromTable = CostCode.find_by(code: ppms_code)
+        if ccFromTable.nil?
+          STDERR.printf("Group '#{proj.name}': ERROR: ppms_code '#{ppms_code}' not found in CostCodes\n")
+          ppms_code = nil
+        end
+        if cc.nil?
+          $ppmslog.warn("Group '#{proj.name}': PPMS cc: '#{ppms_code}'; no cc explicitly set")
+          STDERR.printf("Group '#{proj.name}': PPMS cc: '#{ppms_code}'; no cc explicitly set\n")
+        else
+          if cc == ppms_code
+            $ppmslog.info("Group '#{proj.name}': PPMS cc: '#{ppms_code}'; local cc matches")
+            STDERR.printf("Group '#{proj.name}': PPMS cc: '#{ppms_code}'; local cc matches\n")
+          else
+            $ppmslog.info("Group '#{proj.name}': MISMATCH PPMS cc: '#{ppms_code}'; local cc '#{cc}'")
+            STDERR.printf("Group '#{proj.name}': MISMATCH PPMS cc: '#{ppms_code}'; local cc '#{cc}'\n")
+          end
+        end
+      end
+    end
+  end
 end

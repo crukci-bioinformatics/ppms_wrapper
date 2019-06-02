@@ -81,8 +81,8 @@ class EmailRavenMap < ActiveRecord::Base
       pname = proj.name
       group = ppms.getGroup(proj,verbose=verbose)
       if group.nil?
-        $ppmslog.warn("Group '#{pname}' not found")
-        STDERR.printf("Group '#{pname}' not found\n")
+        $ppmslog.info("Group '#{pname}' not found in PPMS")
+        STDERR.printf("Info: Group '#{pname}' not found in PPMS\n")
       else
         email = group['heademail']
         if EmailRavenMap.find_by(email: email).nil?
