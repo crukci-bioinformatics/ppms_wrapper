@@ -42,8 +42,9 @@ class EmailRavenMap < ActiveRecord::Base
       elsif !data['active'] || data['email'].blank?
         next
       else
-        current[data['email'].downcase].append(data['login'].downcase)
-        raven2email[raven] = data['email'].downcase
+        ekey = data['email'].downcase
+        current[ekey].append(data['login'].downcase)
+        raven2email[raven] = ekey
       end
     end
     current.values.each do |ravens|
@@ -55,8 +56,12 @@ class EmailRavenMap < ActiveRecord::Base
       erm = known_users[raven]
       realmail = raven2email[raven]
       if erm.nil?
-        EmailRavenMap.create(email: realmail, raven: raven)
-        $ppmslog.info("Adding #{realmail} <--> #{raven}")
+        begin
+          EmailRavenMap.create(email: realmail, raven: raven)
+          $ppmslog.info("Adding #{realmail} <--> #{raven}")
+        rescue ActiveRecord::StatementInvalid
+          $ppmslog.error("Failed to add email '#{realmail}', '#{raven}'")
+        end
       else
         if erm.email != realmail
           erm.email = realmail

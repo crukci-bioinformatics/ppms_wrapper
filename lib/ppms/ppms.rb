@@ -1,4 +1,5 @@
 require 'net/http'
+require 'uri'
 require 'json'
 require 'logger'
 require 'csv'
@@ -52,9 +53,14 @@ module PPMS
 
     def makeRequest(req,tag,verbose)
       result = nil
-      Net::HTTP.start(@uri.host,@uri.port, :use_ssl => true) do |conn|
-        result = conn.request(req)
+      conn = Net::HTTP.new(@uri.host,@uri.port)
+      if verbose
+        conn.set_debug_output $stderr
       end
+      conn.use_ssl=true
+      conn.start
+      result = conn.request(req)
+      conn.finish
       if result.nil? or !result.is_a?(Net::HTTPResponse)
         $ppmslog.error("Failed #{tag}: response not a 'Net::HTTPResponse' object (#{result.class})") if verbose
         return nil
@@ -101,7 +107,7 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
-        data = result.body.split.map{|x| CGI.unescapeHTML(x)}
+        data = result.body.each_line.map{|x| CGI.unescapeHTML(x.strip)}
       rescue
         $ppmslog.error("Failed listUsers: result = '#{result.body}'") if verbose
         data = nil
