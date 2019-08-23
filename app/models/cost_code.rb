@@ -31,7 +31,7 @@ class CostCode < ActiveRecord::Base
     CostCode.all.each do |code|
       known_codes[code.ref] = code
     end
-    projects = ppms.getProjects(true)
+    projects = ppms.getProjects()
     projects.each do |proj|
       code = self.extract_code(proj)
       next if code.nil?
