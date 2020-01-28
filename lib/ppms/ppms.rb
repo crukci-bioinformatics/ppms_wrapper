@@ -71,6 +71,7 @@ module PPMS
         $ppmslog.error("Failed #{tag}: bad API key '#{@key}'") if verbose
         return nil
       end
+      result.body = result.body.gsub("\t","") # get rid of evil tab characters
       return result
     end
 
@@ -152,12 +153,27 @@ module PPMS
       return data[name]["Service id"]
     end
 
+    def getProjectsRaw(verbose=false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json", "ExpirationDate" => "true")
+      result = makeRequest(req,__method__,verbose)
+      return result
+    end
+
     def getProjects(verbose=false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json", "ExpirationDate" => "true")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
-      data = JSON.parse(result.body)
+      begin
+        data = JSON.parse(result.body)
+      rescue JSON::ParserError
+        $ppmslog.error("Failed to retrieve projects list")
+        puts "GET PROJECTS"
+        puts result.body
+        puts "END PROJECTS"
+        data = nil
+      end
       return data
     end
 
