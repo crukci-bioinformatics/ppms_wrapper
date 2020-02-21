@@ -5,6 +5,7 @@ require 'logger'
 require 'csv'
 require 'cgi'
 require 'ostruct'
+require 'date'
 
 module PPMS
 
@@ -311,7 +312,7 @@ module PPMS
       return result.body.to_i
     end
 
-    def loadPrices(verbose=false)
+    def loadPricesCSV(verbose=false)
       req = Net::HTTP::Post.new(@uri)
       req.set_form_data("apikey" => @key,
                         "action" => "getpriceslist",
@@ -333,6 +334,41 @@ module PPMS
                                   :price => row[priceCol].to_f)
       end
       return @prices
+    end
+
+    def loadPrices(verbose=false)
+      req = Net::HTTP::Post.new(@uri)
+      req.set_form_data("apikey" => @key,
+                        "action" => "getpriceslist",
+                        "format" => "json")
+      result = makeRequest(req,__method__,verbose)
+      return result if result.nil?
+      prices = Array.new()
+      begin
+        data = JSON.parse(result.body)
+        today = Date.today
+        if !data.nil?
+          data.each do |row|
+            rowDat = OpenStruct.new(
+                           :priority => row["priority"],
+                           :service => row["service"],
+#                                  :service => (row[serviceCol].to_i + @@serviceID * 10**4).to_s,
+                           :affiliation => row["affiliationid"],
+                           :project => row["projectid"],
+                           :price => row["price"],
+                           :startDate => Date.parse(row["minDate"]),
+                           :endDate => Date.parse(row["maxDate"]))
+            if rowDat.startDate <= today && rowDat.endDate >= today
+              prices << rowDat
+            end
+          end
+        end
+      rescue JSON::ParserError
+        $ppmslog.error("Failed getUser: userid not found '#{id}'") if verbose
+        data = nil
+      end
+      @prices = prices
+      return prices
     end
 
     def dumpPrices(destination: $stderr,priceList: nil)
