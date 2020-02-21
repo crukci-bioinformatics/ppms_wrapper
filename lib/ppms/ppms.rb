@@ -351,8 +351,8 @@ module PPMS
           data.each do |row|
             rowDat = OpenStruct.new(
                            :priority => row["priority"],
-                           :service => row["service"],
-#                                  :service => (row[serviceCol].to_i + @@serviceID * 10**4).to_s,
+#                           :service => row["service"],
+                           :service => (row["service"].to_i + @@serviceID * 10**4).to_s,
                            :affiliation => row["affiliationid"],
                            :project => row["projectid"],
                            :price => row["price"],
