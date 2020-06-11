@@ -48,13 +48,24 @@ module PPMS
     def initialize(host: nil, key: nil)
       @host = host.nil? ? Setting.plugin_ppms['api_url'] : host
       @key = key.nil? ? Setting.plugin_ppms['api_key'] : key
-      @uri = URI("https://#{@host}/pumapi/")
+      @pmuapi = URI("https://#{@host}/pumapi/")
+      @api2 = URI("https://#{@host}/API2/")
       @prices = nil
     end
 
+    # Send a request to the PMUAPI. This was the original behaviour.
     def makeRequest(req,tag,verbose)
+      return makeEitherRequest(@pmuapi,req,tag,verbose)
+    end
+    
+    # Send a request to API2.
+    def makeRequest2(req,tag,verbose)
+      return makeEitherRequest(@api2,req,tag,verbose)
+    end
+
+    def makeEitherRequest(api,req,tag,verbose)
       result = nil
-      conn = Net::HTTP.new(@uri.host,@uri.port)
+      conn = Net::HTTP.new(api.host,api.port)
       if verbose
         conn.set_debug_output $stderr
       end
@@ -77,7 +88,7 @@ module PPMS
     end
 
     def isConnected(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getsystems", "format" => "json")
       result = makeRequest(req,__method__,verbose)
       return false if result.nil?
@@ -85,7 +96,7 @@ module PPMS
     end
 
     def getUser(id,verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getuser", "login" => id, "format" => "json")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -104,7 +115,7 @@ module PPMS
     end
 
     def listUsers(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getusers")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -118,7 +129,7 @@ module PPMS
     end
 
     def getSystems(verbose: false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getsystems")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -127,7 +138,7 @@ module PPMS
     end
 
     def getSystemUsers(system,verbose: false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getsysrights", "id" => system)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -140,7 +151,7 @@ module PPMS
         $ppmslog.error("#{__method__}: 'core' parameter must not be nil.") if verbose
         return nil
       end
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getservices", "coreid" => core)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -155,14 +166,14 @@ module PPMS
     end
 
     def getProjectsRaw(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json", "ExpirationDate" => "true")
       result = makeRequest(req,__method__,verbose)
       return result
     end
 
     def getProjects(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getprojects", "format" => "json", "ExpirationDate" => "true")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -178,8 +189,32 @@ module PPMS
       return data
     end
 
+    def getAccountsRaw(core: 7, verbose: false)
+      req = Net::HTTP::Post.new(@api2)
+      req.set_form_data("apikey" => @key, "action" => "GetPPMSAccounts", "format" => "json", "coreId" => core)
+      result = makeRequest(req,__method__,verbose)
+      return result
+    end
+
+    def getAccounts(core: 7, verbose: false)
+      req = Net::HTTP::Post.new(@api2)
+      req.set_form_data("apikey" => @key, "action" => "GetPPMSAccounts", "format" => "json", "coreId" => core)
+      result = makeRequest(req,__method__,verbose)
+      return result if result.nil?
+      begin
+        data = JSON.parse(result.body)
+      rescue JSON::ParserError
+        $ppmslog.error("Failed to retrieve accounts list")
+        puts "GET ACCOUNTS"
+        puts result.body
+        puts "END ACCOUNTS"
+        data = nil
+      end
+      return data
+    end
+
     def getGroups(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getgroups")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -204,7 +239,7 @@ module PPMS
         end
       end
       gpname = I18n.transliterate(gp.name.strip) if gpname.blank?
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getgroup","unitlogin" => gpname)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -264,7 +299,7 @@ module PPMS
     end
 
     def getOrders(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getorders")
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -278,7 +313,7 @@ module PPMS
     end
 
     def getOrder(id,verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getorderlines", "orderref" => id)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
@@ -293,7 +328,7 @@ module PPMS
 
     def submitOrder(service,login,quant,project,cdate,comments,verbose=true)
       ddate = cdate.to_s
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key,
                         "action" => "createorder",
                         "serviceid" => service,
@@ -313,7 +348,7 @@ module PPMS
     end
 
     def loadPricesCSV(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key,
                         "action" => "getpriceslist",
                         "format" => "csv")
@@ -337,7 +372,7 @@ module PPMS
     end
 
     def loadPrices(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key,
                         "action" => "getpriceslist",
                         "format" => "json")
@@ -425,7 +460,7 @@ module PPMS
     end
 
     def getBcodes(verbose=false)
-      req = Net::HTTP::Post.new(@uri)
+      req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key,
                         "action" => "getbcodes")
       result = makeRequest(req,__method__,verbose)

@@ -2,9 +2,9 @@ require 'test_helper'
 
 class PPMSTest < Minitest::Test
 
-  @@test_key = "jpJ1rsqIVhhc1UwbYACHnu3LAIYQnLBS"
+  @@test_key = "2TSryp1TB5j2LLShHsn5pGJ5Q2o92hy"
   @@test_bad_key = "zork"
-  @@test_url = "ppms.eu/cruk-ci-test"
+  @@test_url = "ppms.eu/cruk-ci-dev"
   @@test_user = "gb455"
   @@test_bad_user = "zaphod.beeblebrox"
 
@@ -78,30 +78,41 @@ class PPMSTest < Minitest::Test
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
     data = ppms.getOrders(verbose=@@verbose)
     assert(!data.nil?)
-    assert(data.include? '49')
+    assert(data.include?('800'))
   end
 
   def test_get_order
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    d1 = ppms.getOrders(verbose=@@verbose)
-    id = d1.keys()[0]
-    data = ppms.getOrder(id,verbose=@@verbose)
+    data = ppms.getOrder('800',verbose=@@verbose)
     assert(!data.nil?)
+    order = data['800']
+    assert(!order.nil?)
+    assert_equal('Caldas Group', order['Group'])
   end
 
   def test_get_projects
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
-    data = ppms.getProjects()
+    data = ppms.getProjects(verbose=@@verbose)
     assert(!data.nil?)
     plist = data.select{|p| p['Bcode'] == 'SWAG/001'}
-    assert(plist.length == 1)
+    assert_equal(1, plist.length)
+  end
+
+  def test_get_accounts
+    ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
+    data = ppms.getAccounts()
+    assert(!data.nil?)
+    alist = data.select{|p| p['bcode'] == 'SWAG/002'}
+    assert_equal(1, alist.length)
+    account = alist[0]
+    assert_equal('Compliance and Biobanking', account['descriptionShort'])
   end
 
   def test_get_groups
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
     data = ppms.getGroups()
     assert(!data.nil?)
-    assert(data.include? 'Bioinformatics')
+    assert(data.include?('Bioinformatics'))
   end
 
   def test_get_group
@@ -112,7 +123,7 @@ class PPMSTest < Minitest::Test
     printf('c')
     assert(!data.nil?)
     printf('d')
-    assert(data.include? 'unitlogin')
+    assert(data.include?('unitlogin'))
     printf('e')
     assert(data['unitname'] == 'Odom Group')
     printf('f')

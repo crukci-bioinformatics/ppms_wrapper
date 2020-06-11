@@ -77,9 +77,9 @@ after billing, and to ensure that they are not billed more than once.
 
 #### Rake Tasks
 
-1. `rake redmine:ppms_wrapper:refresh_raven`: refresh list of email addresses
+1. `rake redmine:ppms:refresh_raven`: refresh list of email addresses
    with associated Raven IDs.
-1. `rake redmine:ppms_wrapper:refresh_cost_codes`: refresh list of cost codes
+1. `rake redmine:ppms:refresh_cost_codes`: refresh list of cost codes
    ("projects") with name, code, id.
 1. `rake redmine:ppms:audit_group_leaders`: check whether we can look up group
    leader email addresses from the group names.  To do: add "PPMS Group ID"
@@ -87,6 +87,14 @@ after billing, and to ensure that they are not billed more than once.
    the group leader.
 1. Test format of each data type (group, list of groups, project, list of
    projects, etc).  To do: implement.
+
+#### Unit Tests
+
+The plugin's unit tests can be run with:
+
+`rake redmine:plugins:test:units NAME=ppms`
+
+This requires the Redmine environment around it to run.
 
 #### Remaining Features
 

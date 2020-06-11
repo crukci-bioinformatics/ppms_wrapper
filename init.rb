@@ -12,7 +12,7 @@ Redmine::Plugin.register :ppms do
 
   settings(:default => {'logfile' => '/var/log/redmine/ppms.log',
                         'api_key' => 'jpJ1rsqIVhhc1UwbYACHnu3LAIYQnLBS',
-                        'api_url' => 'ppms.eu/cruk-ci-test',
+                        'api_url' => 'ppms.eu/cruk-ci-dev',
                         'project_root' => 'Research Groups; Fitzgerald',
                         'non_chargeable' => 'Experimental Design Meetings; Statistics Clinic Meeting',
                         'can_commit' => 'admin; eldrid01',
