@@ -12,7 +12,7 @@
 
 <table class="ppms_report">
   <thead>
-    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issue</th></tr>
+    <tr><th>ServiceID</th><th>Login</th><th>Quantity</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issue</th></tr>
   </thead>
   <tbody>
     <% @keys.each do |k| %>
@@ -24,7 +24,6 @@
         <td <%=raw warn %>><%= e[:serviceid] %></td>
         <td <%=raw warn %>><%= e[:login] %></td>
         <td <%=raw warn %>><%= e[:quant] %></td>
-        <td <%=raw warn %>><%= e[:projectid] %></td>
         <td><%= e[:date] %></td>
         <td></td>
         <td><%= e[:email] %>
@@ -64,7 +63,7 @@ or
 
 <table class="ppms_report">
   <thead>
-    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>ProjectID</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issues</th></tr>
+    <tr><th>Order Number</th><th>ServiceID</th><th>Login</th><th>Quantity</th><th>CompleteDate</th><th></th><th>User</th><th>Code</th><th>Project</th><th>Affiliation</th><th>Cost</th><th>Rate</th><th>Issues</th></tr>
   </thead>
   <tbody>
     <% @bnums.each do |k| %>
@@ -76,7 +75,6 @@ or
         <td><%= e[:serviceid] %></td>
         <td><%= e[:login] %></td>
         <td><%= e[:quant] %></td>
-        <td><%= e[:projectid] %></td>
         <td><%= e[:date] %></td>
         <td></td>
         <td><%= e[:email] %>

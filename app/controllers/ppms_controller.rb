@@ -152,17 +152,17 @@ class PpmsController < ApplicationController
     end
     io = StringIO.new("","w")
     io.printf("#{ l(:ppms_report_title) }: #{@intervaltitle}\n\n")
-    io.printf("OrderID,ServiceID,Login,Quantity,ProjectID,CompleteDate,User,Code,Project,Issues\n")
+    io.printf("OrderID,ServiceID,Login,Quantity,Bcode,CompleteDate,User,Code,Issues\n")
     entries.values.each do |ent|
       issues = ent[:iss].to_a.map{|x| "#{x}"}.join(" ")
       issues_comment = "Redmine: #{issues}"
       begin
         quant = ent[:quant].round(2)
-        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:projectid],ent[:date],issues_comment)
+        result = ppms.submitOrder(ent[:serviceid],ent[:login],quant,ent[:bcode],ent[:date],issues_comment)
         ent[:logs].to_a.each do |id|
           TimeEntryOrder.create(time_entry_id: id, order_id: result)
         end
-        io.printf("#{result}, #{ent[:serviceid]}, #{ent[:login]}, #{quant}, #{ent[:projectid]}, #{ent[:date]}, #{ent[:email]}, #{ent[:swag]}, #{ent[:project]}, #{issues}\n")
+        io.printf("#{result},#{ent[:serviceid]},#{ent[:login]},#{quant},#{ent[:bcode]},#{ent[:date]},#{ent[:email]},#{ent[:swag]},#{issues}\n")
       rescue PPMS::PPMS_Error => pe
         $ppmslog.error(pe.message)
         $ppmslog.error(pe.backtrace.join("\n"))
@@ -181,14 +181,14 @@ class PpmsController < ApplicationController
     end
     codename = ppms.getServices().keys[0]
     io = StringIO.new("","w")
-    io.printf("customer id,project code,service code,quantity\n")
+    io.printf("customer id,billing code,service code,quantity\n")
     entries.values.each do |ent|
       result = -1
       ent[:logs].to_a.each do |id|
         TimeEntryOrder.create(time_entry_id: id, order_id: result)
       end
       quant = ent[:quant].round(2)
-      io.printf("#{ent[:email]}, #{ent[:swag]}, #{codename},#{quant}\n")
+      io.printf("#{ent[:email]},#{ent[:swag]},#{codename},#{quant}\n")
     end 
     fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
     send_data(io.string,filename: fn)
@@ -197,7 +197,7 @@ class PpmsController < ApplicationController
 
   def show
     # to send to PPMS:
-    #   project ID (from swag)
+    #   bcode (from swag)
     #   serviceID
     #   login
     #   quantity
@@ -220,7 +220,6 @@ class PpmsController < ApplicationController
     ppms = PPMS::PPMS.new()
     serviceHash = ppms.getServices()
     services = serviceHash.transform_values{|v| v["Service id"]}
-#    swags = ppms.getProjects()
     projects = collectProjects(Setting.plugin_ppms['project_root'])
     nc_activities = collectActivities(Setting.plugin_ppms['non_chargeable'])
 
@@ -263,7 +262,7 @@ class PpmsController < ApplicationController
         end
       end
       cc = costCodes[swag]
-      code = cc.nil? ? nil : cc.ref
+      code = cc&.code
       if raven.nil? || code.nil?
         if @orphans.include? iss.id
           @orphans[iss.id][:quant] += log.hours
@@ -292,7 +291,7 @@ class PpmsController < ApplicationController
             @billed[id][:logs].add(log.id)
             @billed[id][:project].add(proj)
           else
-            @billed[id] = {projectid: code, serviceid: services[iss.service], login: raven,
+            @billed[id] = {bcode: code, serviceid: services[iss.service], login: raven,
                            quant: log.hours, date: log.spent_on, email: who,
                            iss: Set.new([iss.id]), logs: Set.new([log.id]),
                            project: Set.new([proj]),
@@ -300,14 +299,14 @@ class PpmsController < ApplicationController
                            teo: teo.order_id}
           end
         else
-          if keyset.include? key
+          if keyset.include?(key)
             @entries[key][:quant] = @entries[key][:quant] + log.hours
             @entries[key][:date] = [@entries[key][:date], log.spent_on].max
             @entries[key][:iss].add(iss.id)
             @entries[key][:logs].add(log.id)
             @entries[key][:project].add(proj)
           else
-            @entries[key] = {projectid: code, serviceid: services[iss.service], login: raven,
+            @entries[key] = {bcode: code, serviceid: services[iss.service], login: raven,
                              quant: log.hours, date: log.spent_on, email: who,
                              iss: Set.new([iss.id]), logs: Set.new([log.id]),
                              project: Set.new([proj]),
@@ -315,9 +314,9 @@ class PpmsController < ApplicationController
             keyset.add(key)
           end
         end
-        
       end
     end
+
     @keys = keyset.to_a.sort{|a,b| @entries[a][:swag] <=> @entries[b][:swag]}
     @warnings = []
     @thresh = Setting.plugin_ppms['warning_threshold'].to_i
@@ -330,10 +329,10 @@ class PpmsController < ApplicationController
       end
       cc = costCodes[e[:swag]]
       begin
-        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])
+        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.code, service: e[:serviceid])
         toBillTotal += cost
         e[:price] = sprintf("%.2f",cost)
-        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])[0].price)
+        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.code, service: e[:serviceid])[0].price)
         e[:affil] = cc.affiliation
       rescue => ex
         printf("alpha: %s\n",ex)
@@ -342,6 +341,7 @@ class PpmsController < ApplicationController
         e[:affil] = "missing"
       end
     end
+    
     @toBillTotal = sprintf("%.2f",toBillTotal)
     billedTotal = 0
     @billed.keys().each do |k|
@@ -349,10 +349,10 @@ class PpmsController < ApplicationController
       cc = costCodes[e[:swag]]
       e[:project] = reduceProjSet(e[:project])
       begin
-        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])
+        cost = ppms.getPrice(e[:quant], affiliation: cc.affiliation, costCode: cc.code, service: e[:serviceid])
         billedTotal += cost
         e[:price] = sprintf("%.2f",cost)
-        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.ref, service: e[:serviceid])[0].price)
+        e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, costCode: cc.code, service: e[:serviceid])[0].price)
         e[:affil] = cc.affiliation
       rescue => ex
         printf("bravo: %s\n",ex)
@@ -361,6 +361,7 @@ class PpmsController < ApplicationController
         e[:affil] = "missing"
       end
     end
+    
     @billedTotal = sprintf("%.2f",billedTotal)
     @bnums = @billed.keys.sort
     @params = params

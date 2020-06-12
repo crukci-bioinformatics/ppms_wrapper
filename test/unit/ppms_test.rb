@@ -132,10 +132,15 @@ class PPMSTest < Minitest::Test
   def test_load_prices
     ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
     prices = ppms.loadPrices(@@verbose)
-    puts(prices)
     plist = prices.select{|p| p['service'] == '70112' && p['affiliation'] == 8}
     assert_equal(1, plist.length)
     price = plist[0]
     assert_equal(52.75, price['price'])
+  end
+  
+
+  def test_load_prices
+    ppms = PPMS::PPMS.new(host: @@test_url,key: @@test_key)
+    ppms.loadPricesCSV(@@verbose)
   end
 end

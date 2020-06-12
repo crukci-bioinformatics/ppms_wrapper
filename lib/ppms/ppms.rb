@@ -192,14 +192,14 @@ module PPMS
     def getAccountsRaw(core: 7, verbose: false)
       req = Net::HTTP::Post.new(@api2)
       req.set_form_data("apikey" => @key, "action" => "GetPPMSAccounts", "format" => "json", "coreId" => core)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest2(req,__method__,verbose)
       return result
     end
 
     def getAccounts(core: 7, verbose: false)
       req = Net::HTTP::Post.new(@api2)
       req.set_form_data("apikey" => @key, "action" => "GetPPMSAccounts", "format" => "json", "coreId" => core)
-      result = makeRequest(req,__method__,verbose)
+      result = makeRequest2(req,__method__,verbose)
       return result if result.nil?
       begin
         data = JSON.parse(result.body)
@@ -326,7 +326,7 @@ module PPMS
       return data
     end
 
-    def submitOrder(service,login,quant,project,cdate,comments,verbose=true)
+    def submitOrder(service,login,quant,bcode,cdate,comments,verbose=true)
       ddate = cdate.to_s
       req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key,
@@ -334,7 +334,7 @@ module PPMS
                         "serviceid" => service,
                         "login" => login,
                         "quantity" => quant,
-                        "projectid" => project,
+                        "bcode" => bcode,
                         "accepted" => true,
                         "completed" => true,
                         "completeddate" => ddate,
@@ -342,6 +342,13 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       ok = /^\d+$/ =~ result.body
       if ok.nil?
+          $ppmslog.error("PPMS order creation failed: #{result.body}")
+          $ppmslog.error("service = #{service}")
+          $ppmslog.error("login = #{login}")
+          $ppmslog.error("quantity = #{quant}")
+          $ppmslog.error("bcode = #{bcode}")
+          $ppmslog.error("cdate = #{cdate}")
+          $ppmslog.error("comments = #{comments}")
         raise PPMS_Error.new(result.body)
       end
       return result.body.to_i
@@ -386,7 +393,6 @@ module PPMS
           data.each do |row|
             rowDat = OpenStruct.new(
                            :priority => row["priority"],
-#                           :service => row["service"],
                            :service => (row["service"].to_i + @@serviceID * 10**4).to_s,
                            :affiliation => row["affiliationid"],
                            :project => row["projectid"],
@@ -430,7 +436,9 @@ module PPMS
         priceList = priceList.select {|p| p.affiliation == affId || p.affiliation == 0}
       end
       if !costCode.nil?
-        priceList = priceList.select {|p| p.project == costCode || p.project == 0}
+        # This does not work with the new accounts, as costCode is now "SWAG/000" etc.
+        # Previously this was a project id, which does match the values returned by "getpriceslist" 
+        #priceList = priceList.select {|p| p.project == costCode || p.project == 0}
       end
       if !service.nil?
         priceList = priceList.select {|p| p.service == service || p.service == 0}
