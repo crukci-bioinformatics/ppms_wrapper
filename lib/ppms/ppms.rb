@@ -426,26 +426,35 @@ module PPMS
       return nil
     end
 
-    def getRate(affiliation: nil, costCode: nil, service: nil)
+    def getRate(affiliation: nil, service: nil)
       if @prices.nil?
         loadPrices()
       end
+      if service.nil?
+        raise PPMS_Error.new(sprintf("getRate: no service provided (affiliation==%s)",affiliation))
+      end
+      if affiliation.nil?
+        raise PPMS_Error.new(sprintf("getRate: no affiliation provided (service==%s)",service))
+      end
       affId = @@affiliation2id[affiliation]
-      priceList = @prices
-      if !affId.nil?
-        priceList = priceList.select {|p| p.affiliation == affId || p.affiliation == 0}
+      if affId.nil?
+        raise PPMS_Error.new(sprintf("getRate: unknown affiliation provided (affiliation==%s, service==%s)",affiliation,service))
       end
-      if !costCode.nil?
-        # This does not work with the new accounts, as costCode is now "SWAG/000" etc.
-        # Previously this was a project id, which does match the values returned by "getpriceslist" 
-        #priceList = priceList.select {|p| p.project == costCode || p.project == 0}
-      end
-      if !service.nil?
-        priceList = priceList.select {|p| p.service == service || p.service == 0}
+
+      # note that service must match; there's no "any" service.
+      priceList = @prices.select {|p| p.service == service}
+
+      # look for a matching affiliation
+      aff_priceList = priceList.select {|p| p.affiliation == affId}
+      if aff_priceList.length > 0
+        priceList = aff_priceList
       end
       if priceList.length > 1
         topPrio = priceList.map {|p| p.priority}.min
         priceList = priceList.select {|p| p.priority == topPrio}
+      end
+      if priceList.length > 1
+        printf(" ******* getRate: priceList length = %d  aff: %s  serv: %s\n",priceList.length,affiliation, service)
       end
       # by now priceList should have exactly one entry.  If not, it's the caller's problem.
       return priceList
@@ -455,7 +464,7 @@ module PPMS
       if @prices.nil?
         loadPrices()
       end
-      rate = getRate(affiliation: affiliation, costCode: costCode, service: service)
+      rate = getRate(affiliation: affiliation, service: service)
       if rate.length > 1
         raise PPMS_Error.new(sprintf("non-unique price for aff=%s,cc=%s,serv=%s",affiliation,costCode,service))
       end
