@@ -2,7 +2,7 @@ require 'test_helper'
 
 class PPMSTest < Minitest::Test
 
-  @@test_key = "2TSryp1TB5j2LLShHsn5pGJ5Q2o92hy"
+  @@test_key = "Replace with Real Key For Testing"
   @@test_bad_key = "zork"
   @@test_url = "ppms.eu/cruk-ci-dev"
   @@test_user = "gb455"
