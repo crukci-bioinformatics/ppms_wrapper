@@ -70,6 +70,8 @@ module PPMS
         conn.set_debug_output $stderr
       end
       conn.use_ssl=true
+      conn.ssl_version= 'TLSv1'
+#      conn.ciphers = ['RC4-SHA']
       conn.start
       result = conn.request(req)
       conn.finish

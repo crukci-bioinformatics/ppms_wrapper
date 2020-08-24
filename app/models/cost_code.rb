@@ -43,7 +43,9 @@ class CostCode < ActiveRecord::Base
       end
       new_active = account['active'] == "true"
       if cc.nil?
-        CostCode.create(code: code,
+        CostCode.create(name: account['descriptionShort'],
+                        code: code,
+                        ref: account['rowNum'],
                         affiliation: account['affiliation'],
                         expiration: new_date,
                         active: new_active)
