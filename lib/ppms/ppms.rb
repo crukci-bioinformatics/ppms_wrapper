@@ -24,6 +24,13 @@ module PPMS
                         'Commercial' => 8,
                         'Core' => 9,
                         'F.I.R.' => 8}
+    @@id2affiliation = {1 => 'CRUK',
+                        2 => 'Charity',
+                        5 => 'RC / UKGov',
+                        6 => 'EC / ERC',
+                        7 => 'WT',
+                        9 => 'Core',
+                        8 => 'F.I.R.'}
 
     def csv2dict(data,indexKey,headerRow: 0)
       rows = ::CSV.parse(data)
@@ -438,7 +445,11 @@ module PPMS
       if affiliation.nil?
         raise PPMS_Error.new(sprintf("getRate: no affiliation provided (service==%s)",service))
       end
-      affId = @@affiliation2id[affiliation]
+      if @@affiliation2id.keys.include?(affiliation)
+        affId = @@affiliation2id[affiliation]
+      else
+        affId = affiliation.to_i
+      end
       if affId.nil?
         raise PPMS_Error.new(sprintf("getRate: unknown affiliation provided (affiliation==%s, service==%s)",affiliation,service))
       end
@@ -485,6 +496,24 @@ module PPMS
       result = makeRequest(req,__method__,verbose)
       data = csv2dict(result.body,"Bcode",headerRow: 0)
       return data
+    end
+
+    def affiliationName(aff)
+      if @@affiliation2id.keys.include?(aff)
+        affName = aff
+      else
+        affName = @@id2affiliation[aff.to_i]
+      end
+      return affName
+    end
+
+    def affiliationId(aff)
+      if @@affiliation2id.keys.include?(aff)
+        affId = @@affiliation2id[aff]
+      else
+        affId = aff.to_i
+      end
+      return affId
     end
 
   end

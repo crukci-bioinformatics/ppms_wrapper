@@ -333,9 +333,8 @@ class PpmsController < ApplicationController
         toBillTotal += cost
         e[:price] = sprintf("%.2f",cost)
         e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, service: e[:serviceid])[0].price)
-        e[:affil] = cc.affiliation
+        e[:affil] = ppms.affiliationName(cc.affiliation)
       rescue => ex
-        printf("alpha: %s\n",ex)
         e[:price] = 0
         e[:rate] = -99
         e[:affil] = "missing"
@@ -353,9 +352,8 @@ class PpmsController < ApplicationController
         billedTotal += cost
         e[:price] = sprintf("%.2f",cost)
         e[:rate] = sprintf("%.2f",ppms.getRate(affiliation: cc.affiliation, service: e[:serviceid])[0].price)
-        e[:affil] = cc.affiliation
+        e[:affil] = ppms.affiliationName(cc.affiliation)
       rescue => ex
-        printf("bravo: %s\n",ex)
         e[:price] = 0
         e[:rate] = -99
         e[:affil] = "missing"
