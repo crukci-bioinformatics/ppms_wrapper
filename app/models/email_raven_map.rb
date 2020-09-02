@@ -16,8 +16,8 @@ class EmailRavenMap < ActiveRecord::Base
       raven = found[0]
       $ppmslog.warn("#{__method__}: choosing '#{raven}' from #{names}")
     elsif found.length == 0
-      $ppmslog.error("#{__method__}: no legal ravens in #{names}")
-      raven = nil
+      raven = names[0]
+      $ppmslog.warn("#{__method__}: no legal ravens in #{names}, choosing '#{raven}'")
     else
       raven = found[0]
       $ppmslog.error("#{__method__}: multiple ravens in #{names}, choosing '#{raven}'")
@@ -27,11 +27,11 @@ class EmailRavenMap < ActiveRecord::Base
 
   def self.refresh(ppms)
     known_users = {}
-    seen = Set.new
     EmailRavenMap.all.each do |erm|
       known_users[erm.raven] = erm
     end
     current = Hash.new{|h,k| h[k] = []}
+    seen = Set.new
     raven2email = Hash.new
     ppms.listUsers.each do |raven|
       raven = raven.downcase
@@ -40,6 +40,7 @@ class EmailRavenMap < ActiveRecord::Base
       if data.nil?
         $ppmslog.warn("#{__method__}: no data for raven='#{raven}'")
       elsif !data['active'] || data['email'].blank?
+        $ppmslog.warn("#{__method__}: inactive or blank user: raven='#{raven}' email='#{data['email']}' active=#{data['active']}'")
         next
       else
         ekey = data['email'].downcase
