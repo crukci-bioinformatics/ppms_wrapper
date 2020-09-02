@@ -123,9 +123,9 @@ module PPMS
       return data
     end
 
-    def listUsers(verbose=false)
+    def listUsers(verbose=false,active=true)
       req = Net::HTTP::Post.new(@pmuapi)
-      req.set_form_data("apikey" => @key, "action" => "getusers")
+      req.set_form_data("apikey" => @key, "action" => "getusers", "active" => active)
       result = makeRequest(req,__method__,verbose)
       return result if result.nil?
       begin
