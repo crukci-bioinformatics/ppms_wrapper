@@ -1,0 +1,26 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3>Time Orders without Notification</h3>
+
+<table class="ppms_report">
+  <thead>
+    <tr>
+      <th>Order id</th>
+      <th>Logged By</th>
+      <th>Issue</th>
+      <th>Activity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @orders.each do |order| %>
+      <tr>
+        <td><%= order.order_id %></td>
+        <td><%= order.user %></td>
+        <td><%= order.issue %></td>
+        <td><%= order.activity %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

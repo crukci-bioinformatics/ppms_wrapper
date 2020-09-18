@@ -3,6 +3,7 @@
 namespace :ppms do
   resources :cost_codes, only: :index
   resources :email_raven_maps, only: :index
+  resources :order_mailer, only: :index
   get :index, action: :index
   put :index, action: :show
   patch :index, action: :update
