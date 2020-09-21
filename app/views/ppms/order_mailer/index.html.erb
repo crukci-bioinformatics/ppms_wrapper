@@ -7,6 +7,28 @@
 <table class="ppms_report">
   <thead>
     <tr>
+      <th>Issue</th>
+      <th>Orders</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @orders_by_issue.each do |issue_id, entries| %>
+      <% issue = @issues[issue_id] %>
+      <tr>
+        <td><abbr title="<%= issue.id %>: <%= issue.subject %>"><%= issue_id %></abbr></td>
+        <td>
+          <% entries.each do |entry| %>
+            <%= entry.time_entry.hours %> <%= entry.time_entry.user %><br/>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<table class="ppms_report">
+  <thead>
+    <tr>
       <th>Order id</th>
       <th>Logged By</th>
       <th>Issue</th>
@@ -17,9 +39,9 @@
     <% @orders.each do |order| %>
       <tr>
         <td><%= order.order_id %></td>
-        <td><%= order.user %></td>
-        <td><%= order.issue %></td>
-        <td><%= order.activity %></td>
+        <td><%= order.time_entry.user %></td>
+        <td><%= order.time_entry.issue.id %>: <%= order.time_entry.issue.subject %></td>
+        <td><%= order.time_entry.activity %></td>
       </tr>
     <% end %>
   </tbody>
