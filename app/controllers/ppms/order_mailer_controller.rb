@@ -3,6 +3,9 @@ class Ppms::OrderMailerController < ApplicationController
   unloadable
 
   def index
+    @researcher_field = CustomField.where(name: "Researcher Email").take!
+    @experiment_type_field = CustomField.where(name: "Experiment Type").take!
+
     @orders = TimeEntryOrder.where(mailed_at: nil)
     #@orders.each do |order|
     #  $ppmslog.warn("TEO #{order.id} is issue #{order.time_entry.issue.id} - #{order.time_entry.issue.subject}")
@@ -22,6 +25,7 @@ class Ppms::OrderMailerController < ApplicationController
       end
       current << order
     end
+    
   end
 
 end
