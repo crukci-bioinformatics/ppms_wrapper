@@ -7,9 +7,10 @@
 <table class="ppms_report">
   <thead>
     <tr>
-      <th>Issue</th>
-      <th>Time</th>
+      <th colspan="2">Issue</th>
+      <th>Experiment Type</th>
       <th>Researcher</th>
+      <th>Time</th>
       <th>Orders</th>
     </tr>
   </thead>
@@ -17,11 +18,14 @@
     <% @orders_by_issue.each do |issue_id, entries| %>
       <% issue = @issues[issue_id] %>
       <% total = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
+      <% experiment_type = issue.custom_field_values.select { |cvf| cvf.custom_field.id == @experiment_type_field.id }.first&.value %>
       <% researcher = issue.custom_field_values.select { |cvf| cvf.custom_field.id == @researcher_field.id }.first&.value %>
       <tr>
-        <td><abbr title="<%= issue.id %>: <%= issue.subject %>"><%= issue_id %></abbr></td>
-        <td><%= total %></td>
+        <td><%= issue.id %></td>
+        <td><%= issue.subject %></td>
+        <td><%= experiment_type %></td>
         <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
+        <td><%= total %></td>
         <td>
           <% entries.each do |entry| %>
             <%= entry.time_entry.hours %> <%= entry.time_entry.user %><br/>
