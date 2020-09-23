@@ -25,10 +25,10 @@
         <td><%= issue.subject %></td>
         <td><%= experiment_type %></td>
         <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
-        <td><%= total %></td>
+        <td><%= hours_minutes(total) %></td>
         <td>
           <% entries.each do |entry| %>
-            <%= entry.time_entry.hours %> <%= entry.time_entry.user %><br/>
+            <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br/>
           <% end %>
         </td>
       </tr>

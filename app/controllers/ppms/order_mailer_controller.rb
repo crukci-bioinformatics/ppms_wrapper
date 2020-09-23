@@ -5,6 +5,8 @@ class Ppms::OrderMailerController < ApplicationController
   include PPMS::Utilities
   
   unloadable
+  
+  helper_method :hours_minutes
 
   def index
     @researcher_field = CustomField.where(name: "Researcher Email").take!
@@ -36,7 +38,10 @@ class Ppms::OrderMailerController < ApplicationController
       end
       current << order
     end
-    
   end
-
+  
+  def hours_minutes(time)
+    hm = (time * 60).round.divmod(60)
+    sprintf("%d:%02d", hm[0], hm[1])
+  end
 end
