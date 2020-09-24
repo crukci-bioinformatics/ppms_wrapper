@@ -59,8 +59,13 @@ class Ppms::OrderMailerController < ApplicationController
       order_id = order.order_id
       unless @ppms_orders.has_value?(order_id)
         begin
-          @ppms_orders[order_id] = ppms.getOrder(order_id)
-          $ppmslog.info("PPMS order #{order_id} is #{@ppms_orders[order_id]}")
+          order = ppms.getOrder(order_id)
+          @ppms_orders[order_id] = order
+          
+          cost = ppms.getPrice(order['Quanitity'], service: order['ServiceID'])
+          order['Cost'] = cost
+              
+          $ppmslog.info("PPMS order #{order_id} is #{order} and costs #{cost}")
         rescue OpenSSL::SSL::SSLError => ssl_error
           $ppmslog.warn("Error fetching order #{order_id}: #{ssl_error}")
         rescue Net::OpenTimeout => timeout
