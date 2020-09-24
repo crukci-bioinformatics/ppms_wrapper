@@ -261,7 +261,7 @@ module PPMS
       end
       return data
     end
-
+    
     def issue2User(iss,verbose=false)
       email = iss.researcher
       user = nil

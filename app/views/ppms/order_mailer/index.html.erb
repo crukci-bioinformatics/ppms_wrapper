@@ -42,6 +42,7 @@
       <th>Order id</th>
       <th>Logged By</th>
       <th>Issue</th>
+      <th>Time</th>
       <th>Activity</th>
     </tr>
   </thead>
@@ -50,7 +51,8 @@
       <tr>
         <td><%= order.order_id %></td>
         <td><%= order.time_entry.user %></td>
-        <td><%= order.time_entry.issue.id %>: <%= order.time_entry.issue.subject %></td>
+        <td><abbr title="<%= order.time_entry.issue.subject %>"><%= order.time_entry.issue.id %></abbr></td>
+        <td><%= hours_minutes(order.time_entry.hours) %></td>
         <td><%= order.time_entry.activity %></td>
       </tr>
     <% end %>
