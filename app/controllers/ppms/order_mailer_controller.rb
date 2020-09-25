@@ -11,21 +11,20 @@ class Ppms::OrderMailerController < ApplicationController
   def index
     @researcher_field = CustomField.find_by(name: "Researcher Email")
     @experiment_type_field = CustomField.find_by(name: "Experiment Type")
-    @ppms_group_field = CustomField.find_by(name: "PPMS Group ID")
 
     mailing_projects = collectProjects(Setting.plugin_ppms['mailing_root'])
-    $ppmslog.info("Filters: #{mailing_projects}")
+    #$ppmslog.info("Filters: #{mailing_projects}")
     
     # The above returns ids. We need to load the actual projects.
     mailing_projects = Project.where(:id => mailing_projects)
     
     mailing_projects.each do |project|
-      $ppmslog.info("Project: #{project.id} #{project.name}")
+      #$ppmslog.info("Project: #{project.id} #{project.name}")
     end
     
     top_level_projects = reduceProjSet(mailing_projects)
     top_level_projects.each do |project|
-      $ppmslog.info("Reduced project: #{project.id} #{project.name}")
+      #$ppmslog.info("Reduced project: #{project.id} #{project.name}")
     end
 
     @orders = TimeEntryOrder.where(mailed_at: nil)
@@ -45,8 +44,8 @@ class Ppms::OrderMailerController < ApplicationController
     @ppms_orders = Hash.new
     @ppms_groups_by_project_id = Hash.new
     
-    @orders.each do |order|
-      issue = order.time_entry.issue
+    @orders.each do |time_order|
+      issue = time_order.time_entry.issue
       @issues[issue.id] = issue
       
       current = @orders_by_issue[issue.id]
@@ -54,37 +53,44 @@ class Ppms::OrderMailerController < ApplicationController
         current = Array.new
         @orders_by_issue[issue.id] = current
       end
-      current << order
-      
-      order_id = order.order_id
-      unless @ppms_orders.has_value?(order_id)
+      current << time_order
+
+      project_id = time_order.project.id
+      if @ppms_groups_by_project_id[project_id].nil?
         begin
-          order = ppms.getOrder(order_id)
-          @ppms_orders[order_id] = order
-          
-          cost = ppms.getPrice(order['Quanitity'], service: order['ServiceID'])
-          order['Cost'] = cost
-              
-          $ppmslog.info("PPMS order #{order_id} is #{order} and costs #{cost}")
-        rescue OpenSSL::SSL::SSLError => ssl_error
-          $ppmslog.warn("Error fetching order #{order_id}: #{ssl_error}")
-        rescue Net::OpenTimeout => timeout
-          $ppmslog.warn("Time out fetching order #{order_id}: #{timeout}")
-        end
-      end
-      
-      project_id = order.project.id
-      unless @ppms_groups_by_project_id.has_value?(project_id)
-        begin
-          project_with_group = get_ppms_group_project(order.project)
-          if not project_with_group.nil?
-            @ppms_groups_by_project_id[project_id] = ppms.getGroup(project_with_group)
-            $ppmslog.info("PPMS project #{project_id} is group #{@ppms_groups_by_project_id[project_id]}")
+          group = get_ppms_group_for_project(ppms, time_order.project)
+          if not group.nil?
+            @ppms_groups_by_project_id[project_id] = group
+            $ppmslog.info("PPMS project #{project_id} is group #{group}")
           end
         rescue OpenSSL::SSL::SSLError => ssl_error
           $ppmslog.warn("Error fetching group for project #{project_id}: #{ssl_error}")
         rescue Net::OpenTimeout => timeout
           $ppmslog.warn("Time out fetching group for project #{project_id}: #{timeout}")
+        end
+      end
+
+      order_id = time_order.order_id
+      if @ppms_orders[order_id].nil?
+        begin
+          project = @ppms_groups_by_project_id[project_id]
+          
+          ppms_order = ppms.getOrder(order_id)[order_id.to_s]
+          @ppms_orders[order_id] = ppms_order
+          
+          begin
+            cost = ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: project['affiliation'], service: ppms_order['ServiceID'])
+            ppms_order['Cost'] = cost
+          rescue PPMS::PPMS_Error => failure
+            ppms_order['Cost'] = "Unavailable"
+            $ppmslog.error(failure.message)
+          end
+              
+          $ppmslog.info("PPMS order #{order_id} is #{ppms_order} and costs #{cost}")
+        rescue OpenSSL::SSL::SSLError => ssl_error
+          $ppmslog.warn("Error fetching order #{order_id}: #{ssl_error}")
+        rescue Net::OpenTimeout => timeout
+          $ppmslog.warn("Time out fetching order #{order_id}: #{timeout}")
         end
       end
     end
@@ -95,19 +101,15 @@ class Ppms::OrderMailerController < ApplicationController
     sprintf("%d:%02d", hm[0], hm[1])
   end
   
-  def get_ppms_group_project(project)
-    field_id = @ppms_group_field&.id
+  def get_ppms_group_for_project(ppms, project)
     
-    values = project.custom_values.select{|p| p.custom_field_id == field_id}
-    if values.length > 0
-      return project
-    end
+    group = ppms.getGroup(project)
     
-    if not project.parent_id.nil?
+    if group.nil? and !project.parent_id.nil?
       parent = Project.find(project.parent_id)
-      return get_ppms_group_project(parent)
+      group = get_ppms_group_for_project(ppms, parent)
     end
     
-    return nil
+    return group
   end
 end

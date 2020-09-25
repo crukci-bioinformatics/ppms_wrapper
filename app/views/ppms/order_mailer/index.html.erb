@@ -17,7 +17,7 @@
   <tbody>
     <% @orders_by_issue.each do |issue_id, entries| %>
       <% issue = @issues[issue_id] %>
-      <% total = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
+      <% total_time = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
       <% experiment_type = issue.custom_field_values.select { |cvf| cvf.custom_field.id == @experiment_type_field.id }.first&.value %>
       <% researcher = issue.custom_field_values.select { |cvf| cvf.custom_field.id == @researcher_field.id }.first&.value %>
       <tr>
@@ -25,7 +25,7 @@
         <td><%= issue.subject %></td>
         <td><%= experiment_type %></td>
         <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
-        <td><%= hours_minutes(total) %></td>
+        <td><%= hours_minutes(total_time) %></td>
         <td>
           <% entries.each do |entry| %>
             <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br/>
@@ -44,6 +44,7 @@
       <th>Issue</th>
       <th>Time</th>
       <th>Activity</th>
+      <th>Price</th>
     </tr>
   </thead>
   <tbody>
@@ -54,6 +55,7 @@
         <td><abbr title="<%= order.time_entry.issue.subject %>"><%= order.time_entry.issue.id %></abbr></td>
         <td><%= hours_minutes(order.time_entry.hours) %></td>
         <td><%= order.time_entry.activity %></td>
+        <td><%= @ppms_orders[order.order_id]['Cost'] %></td>
       </tr>
     <% end %>
   </tbody>
