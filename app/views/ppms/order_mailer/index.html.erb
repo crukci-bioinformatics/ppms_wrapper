@@ -55,7 +55,7 @@
         <td><abbr title="<%= order.time_entry.issue.subject %>"><%= order.time_entry.issue.id %></abbr></td>
         <td><%= hours_minutes(order.time_entry.hours) %></td>
         <td><%= order.time_entry.activity %></td>
-        <td><%= @ppms_orders[order.order_id]['Cost'] %></td>
+        <td>&pound;<%= '%.2f' % @ppms_orders[order.order_id]['Cost'] %></td>
       </tr>
     <% end %>
   </tbody>

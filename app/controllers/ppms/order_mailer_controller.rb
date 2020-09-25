@@ -12,10 +12,10 @@ class Ppms::OrderMailerController < ApplicationController
     @researcher_field = CustomField.find_by(name: "Researcher Email")
     @experiment_type_field = CustomField.find_by(name: "Experiment Type")
 
-    mailing_projects = collectProjects(Setting.plugin_ppms['mailing_root'])
-    #$ppmslog.info("Filters: #{mailing_projects}")
+    @root_project_ids = getRootProjects(Setting.plugin_ppms['mailing_root'])
     
-    # The above returns ids. We need to load the actual projects.
+    # getProjects also returns ids.
+    mailing_projects = collectProjects(Setting.plugin_ppms['mailing_root'])
     mailing_projects = Project.where(:id => mailing_projects)
     
     mailing_projects.each do |project|
@@ -78,9 +78,12 @@ class Ppms::OrderMailerController < ApplicationController
           ppms_order = ppms.getOrder(order_id)[order_id.to_s]
           @ppms_orders[order_id] = ppms_order
           
+          ## Note that the service id we're looking for is the core facility id * 10000 + the service id.
+          
           ppms_order['Cost'] = "Unavailable"
           begin
-            ppms_order['Cost'] = ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: project['affiliation'], service: ppms_order['ServiceID'].to_i)
+            service_id = ppms.get_facility_service_id(ppms_order['ServiceID']).to_s
+            ppms_order['Cost'] = ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: project['affiliation'], service: service_id)
           rescue PPMS::PPMS_Error => failure
             $ppmslog.error(failure.message)
           end
@@ -104,7 +107,7 @@ class Ppms::OrderMailerController < ApplicationController
     
     group = ppms.getGroup(project)
     
-    if group.nil? and !project.parent_id.nil?
+    if group.nil? and !project.parent_id.nil? and !@root_project_ids.include?(project.parent_id)
       parent = Project.find(project.parent_id)
       group = get_ppms_group_for_project(ppms, parent)
     end

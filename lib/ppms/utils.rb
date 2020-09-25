@@ -12,12 +12,27 @@ module PPMS
       end
     end
 
+    # Get the ids of root projects given by names and the ids of all
+    # subprojects from those roots.
     def collectProjects(names)
       roots = semiString2List(names)
       projList = Array.new
       roots.each do |root|
         Project.where(name: root).each do |p|
           includeProject(p,projList)
+        end
+      end
+      return projList
+    end
+
+    # Get the ids of root projects given by names without collecting
+    # subprojects.
+    def getRootProjects(names)
+      roots = semiString2List(names)
+      projList = Array.new
+      roots.each do |root|
+        Project.where(name: root).each do |p|
+          projList << p.id
         end
       end
       return projList

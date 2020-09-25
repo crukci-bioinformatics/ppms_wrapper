@@ -15,7 +15,7 @@ module PPMS
   class PPMS
     include ::I18n
     
-    @@serviceID = 7
+    @@coreFacilityID = 7
     @@affiliation2id = {'CRUK' => 1,
                         'Charity' => 2,
                         'RC / UKGov' => 5,
@@ -379,7 +379,7 @@ module PPMS
       @prices = Array.new()
       rows[1..rows.length-1].each do |row|
         @prices << OpenStruct.new(:priority => row[prioCol].to_i,
-                                  :service => (row[serviceCol].to_i + @@serviceID * 10**4).to_s,
+                                  :service => get_facility_service_id(row[serviceCol]).to_s,
                                   :affiliation => row[affCol].to_i,
                                   :project => row[projCol].to_i,
                                   :price => row[priceCol].to_f)
@@ -402,7 +402,7 @@ module PPMS
           data.each do |row|
             rowDat = OpenStruct.new(
                            :priority => row["priority"],
-                           :service => (row["service"].to_i + @@serviceID * 10**4).to_s,
+                           :service => get_facility_service_id(row["service"]).to_s,
                            :affiliation => row["affiliationid"],
                            :project => row["projectid"],
                            :price => row["price"],
@@ -516,5 +516,13 @@ module PPMS
       return affId
     end
 
+    # The service id returned in, for example, getPrices is:
+    # core facility id * 10000 + service id
+    #
+    # Some cases will need to convert the returned integer into a string
+    # for matching.
+    def get_facility_service_id(service_id)
+      service_id.to_i + @@coreFacilityID * 10000 
+    end
   end
 end
