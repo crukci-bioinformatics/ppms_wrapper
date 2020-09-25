@@ -78,15 +78,14 @@ class Ppms::OrderMailerController < ApplicationController
           ppms_order = ppms.getOrder(order_id)[order_id.to_s]
           @ppms_orders[order_id] = ppms_order
           
+          ppms_order['Cost'] = "Unavailable"
           begin
-            cost = ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: project['affiliation'], service: ppms_order['ServiceID'])
-            ppms_order['Cost'] = cost
+            ppms_order['Cost'] = ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: project['affiliation'], service: ppms_order['ServiceID'].to_i)
           rescue PPMS::PPMS_Error => failure
-            ppms_order['Cost'] = "Unavailable"
             $ppmslog.error(failure.message)
           end
               
-          $ppmslog.info("PPMS order #{order_id} is #{ppms_order} and costs #{cost}")
+          $ppmslog.info("PPMS order #{order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
         rescue OpenSSL::SSL::SSLError => ssl_error
           $ppmslog.warn("Error fetching order #{order_id}: #{ssl_error}")
         rescue Net::OpenTimeout => timeout
