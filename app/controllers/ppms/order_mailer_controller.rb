@@ -12,31 +12,20 @@ class Ppms::OrderMailerController < ApplicationController
     @researcher_field = CustomField.find_by(name: "Researcher Email")
     @experiment_type_field = CustomField.find_by(name: "Experiment Type")
 
+    # Find projects that have entries we want to mail. They'll be the ones
+    # under those named in the "mailing_root" setting.
+    
     @root_project_ids = getRootProjects(Setting.plugin_ppms['mailing_root'])
     
-    # getProjects also returns ids.
-    mailing_projects = collectProjects(Setting.plugin_ppms['mailing_root'])
-    mailing_projects = Project.where(:id => mailing_projects)
+    # collectProjects also returns ids.
+    mailing_project_ids = collectProjects(Setting.plugin_ppms['mailing_root'])
+    mailing_projects = Project.where(:id => mailing_project_ids)
     
-    mailing_projects.each do |project|
-      #$ppmslog.info("Project: #{project.id} #{project.name}")
-    end
-    
-    top_level_projects = reduceProjSet(mailing_projects)
-    top_level_projects.each do |project|
-      #$ppmslog.info("Reduced project: #{project.id} #{project.name}")
-    end
+    # Find time entry order that have not been mailed whose project is in
+    # the projects under the mailing roots.
+    @orders = TimeEntryOrder.joins(time_entry: :project).where(mailed_at: nil, projects: {id: mailing_project_ids })
+    $ppmslog.info("Time entry orders to mail: #{@orders.size}")
 
-    @orders = TimeEntryOrder.where(mailed_at: nil)
-    $ppmslog.info("Orders before filter: #{@orders.size}")
-    @orders = @orders.select { |order| mailing_projects.include? order.time_entry.project }
-    $ppmslog.info("Orders after filter: #{@orders.size}")
-         
-    
-    #@orders.each do |order|
-    #  $ppmslog.warn("TEO #{order.id} is issue #{order.time_entry.issue.id} - #{order.time_entry.issue.subject}")
-    #end
-    
     ppms = PPMS::PPMS.new()
       
     @issues = Hash.new
@@ -78,7 +67,8 @@ class Ppms::OrderMailerController < ApplicationController
           ppms_order = ppms.getOrder(order_id)[order_id.to_s]
           @ppms_orders[order_id] = ppms_order
           
-          ## Note that the service id we're looking for is the core facility id * 10000 + the service id.
+          # Note that the service id we're looking for is the core facility id * 10000 + the service id.
+          # This is handled by PPMS::get_facility_service_id
           
           ppms_order['Cost'] = "Unavailable"
           begin
