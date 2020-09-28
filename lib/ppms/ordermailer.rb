@@ -112,6 +112,53 @@ module PPMS
             return ppms_order
         end
     
+        def assembleOrdersToGroups()
+            
+            time_orders_by_issue = assembleTimeOrderEntries()
+            flat_time_orders = time_orders_by_issue.values.flatten 
+    
+            issues = Hash.new
+        
+            flat_time_orders.each do |time_order|
+                issues[time_order.issue.id] = time_order.issue
+            end
+    
+            projects = issues.values.map{ |issue| issue.project }.uniq
+            ppms_groups_by_project_id = getPPMSGroupsForProjects(projects)
+            
+            issues_by_group = Hash.new
+            
+            time_orders_by_issue.each do |issue_id, time_order_entries|
+                issue = issues[issue_id]
+                ppms_group = ppms_groups_by_project_id[issue.project.id]
+                group_id = ppms_group["unitlogin"]
+                
+                group_hash = issues_by_group[group_id]
+                if group_hash.nil?
+                    group_hash = Hash.new
+                    group_hash['group'] = ppms_group
+                    group_hash['issues'] = Hash.new
+                    group_hash['time_entries'] = Hash.new
+                    group_hash['orders'] = Hash.new
+                    issues_by_group[group_id] = group_hash
+                end
+                
+                group_hash['issues'][issue_id] = issue
+                group_hash['time_entries'][issue_id] = time_order_entries
+                    
+                order_ids = time_order_entries.map { |time_order| time_order.order_id }.uniq
+                    
+                order_ids.each do |order_id|
+                    if group_hash[order_id].nil?
+                        ppms_order = getPPMSOrder(order_id, ppms_group)
+                        group_hash['orders'][order_id] = ppms_order
+                    end
+                end
+            end
+            
+            return issues_by_group
+        end
+        
         def assembleMails()
         # https://guides.rubyonrails.org/active_record_querying.html
         #projects = collectProjects(Setting.plugin_ppms['project_root'])

@@ -4,37 +4,46 @@
 
 <h3>Time Orders Awaiting Notification</h3>
 
-<table class="ppms_report">
-    <thead>
-        <tr>
-            <th colspan="2">Issue</th>
-            <th>Experiment Type</th>
-            <th>Researcher</th>
-            <th>Time</th>
-            <th>Orders</th>
-        </tr>
-    </thead>
-    <tbody>
-        <% @time_orders_by_issue.each do |issue_id, entries| %>
-            <% issue = @issues[issue_id] %>
-            <% total_time = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
-            <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
-            <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == @researcher_field.id }.first&.value %>
+<% @issues_by_group.each do |group_id, group_hash| %>
+    <% ppms_group = group_hash['group'] %>
+    <% issues = group_hash['issues'] %>
+    <% time_orders_by_issue = group_hash['time_entries'] %>
+
+    <h4><%= ppms_group['unitname'] %></h4>
+
+    <table class="ppms_report">
+        <thead>
             <tr>
-                <td><%= issue.id %></td>
-                <td><%= issue.subject %></td>
-                <td><%= experiment_type %></td>
-                <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
-                <td><%= hours_minutes(total_time) %></td>
-                <td>
-                    <% entries.each do |entry| %>
-                        <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br />
-                    <% end %>
-                </td>
+                <th colspan="2">Issue</th>
+                <th>Experiment Type</th>
+                <th>Researcher</th>
+                <th>Time</th>
+                <th>Orders</th>
             </tr>
-        <% end %>
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            <% time_orders_by_issue.each do |issue_id, entries| %>
+                <% issue = issues[issue_id] %>
+                <% total_time = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
+                <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
+                <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == @researcher_field.id }.first&.value %>
+                <tr>
+                    <td><%= issue.id %></td>
+                    <td><%= issue.subject %></td>
+                    <td><%= experiment_type %></td>
+                    <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
+                    <td><%= hours_minutes(total_time) %></td>
+                    <td>
+                        <% entries.each do |entry| %>
+                            <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br />
+                        <% end %>
+                    </td>
+                </tr>
+            <% end %>
+        </tbody>
+    </table>
+<% end %>
+
 
 <table class="ppms_report">
     <thead>
@@ -48,15 +57,18 @@
         </tr>
     </thead>
     <tbody>
-        <% @time_orders_by_issue.values.flatten.each do |time_order| %>
-            <tr>
-                <td><%= time_order.order_id %></td>
-                <td><%= time_order.time_entry.user %></td>
-                <td><abbr title="<%= time_order.issue.subject %>"><%= time_order.issue.id %></abbr></td>
-                <td><%= hours_minutes(time_order.time_entry.hours) %></td>
-                <td><%= time_order.time_entry.activity %></td>
-                <td>&pound;<%= '%.2f' % @ppms_orders[time_order.order_id]['Cost'] %></td>
-            </tr>
+        <% @issues_by_group.values.each do |group_hash| %>
+            <% orders = group_hash['orders'] %>
+            <% group_hash['time_entries'].values.flatten.each do |time_order| %>
+                <tr>
+                    <td><%= time_order.order_id %></td>
+                    <td><%= time_order.time_entry.user %></td>
+                    <td><abbr title="<%= time_order.issue.subject %>"><%= time_order.issue.id %></abbr></td>
+                    <td><%= hours_minutes(time_order.time_entry.hours) %></td>
+                    <td><%= time_order.time_entry.activity %></td>
+                    <td>&pound;<%= '%.2f' % orders[time_order.order_id]['Cost'] %></td>
+                </tr>
+            <% end %>
         <% end %>
     </tbody>
 </table>
