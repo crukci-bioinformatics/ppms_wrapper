@@ -1,7 +1,8 @@
-<% content_for :header_tags do %> <%= stylesheet_link_tag 'ppms.css', :plugin =>
-'ppms', :media => 'all' %> <% end %>
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
 
-<h3>Time Orders without Notification</h3>
+<h3>Time Orders Awaiting Notification</h3>
 
 <table class="ppms_report">
     <thead>
@@ -14,7 +15,7 @@
         </tr>
     </thead>
     <tbody>
-        <% @orders_by_issue.each do |issue_id, entries| %>
+        <% @time_orders_by_issue.each do |issue_id, entries| %>
             <% issue = @issues[issue_id] %>
             <% total_time = entries.inject(0) { |sum, entry| sum + entry.time_entry.hours } %>
             <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
@@ -27,7 +28,7 @@
                 <td><%= hours_minutes(total_time) %></td>
                 <td>
                     <% entries.each do |entry| %>
-                    <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br />
+                        <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br />
                     <% end %>
                 </td>
             </tr>
@@ -47,17 +48,15 @@
         </tr>
     </thead>
     <tbody>
-        <% @orders_by_issue.values.each do |entries| %>
-            <% entries.each do |order| %>
-                <tr>
-                    <td><%= order.order_id %></td>
-                    <td><%= order.time_entry.user %></td>
-                    <td><abbr title="<%= order.time_entry.issue.subject %>"><%= order.time_entry.issue.id %></abbr></td>
-                    <td><%= hours_minutes(order.time_entry.hours) %></td>
-                    <td><%= order.time_entry.activity %></td>
-                    <td>&pound;<%= '%.2f' % @ppms_orders[order.order_id]['Cost'] %></td>
-                </tr>
-            <% end %>
+        <% @time_orders_by_issue.values.flatten.each do |time_order| %>
+            <tr>
+                <td><%= time_order.order_id %></td>
+                <td><%= time_order.time_entry.user %></td>
+                <td><abbr title="<%= time_order.issue.subject %>"><%= time_order.issue.id %></abbr></td>
+                <td><%= hours_minutes(time_order.time_entry.hours) %></td>
+                <td><%= time_order.time_entry.activity %></td>
+                <td>&pound;<%= '%.2f' % @ppms_orders[time_order.order_id]['Cost'] %></td>
+            </tr>
         <% end %>
     </tbody>
 </table>
