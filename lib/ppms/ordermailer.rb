@@ -11,6 +11,13 @@ module PPMS
             @root_project_ids = getRootProjects(Setting.plugin_ppms['mailing_root'])
         end
         
+        ##
+        # Finds time_entry_order objects that have not been mailed already and whose
+        # project is under the roots defined by the "mailing_root" setting.
+        #
+        # @return [Hash] A hash of issue number to an array of time_entry_order objects for
+        # that issue.
+        #
         def assembleTimeOrderEntries()
             # Find projects that have entries we want to mail. They'll be the ones
             # under those named in the "mailing_root" setting.
@@ -37,7 +44,15 @@ module PPMS
             
             return orders_by_issue
         end
-        
+
+        ##
+        # Search PPMS to get the PPMS group that is relevant to the given Redmine
+        # projects.
+        #
+        # @param [Array of project] projects The projects to get the groups for.
+        #
+        # @return [Hash] A hash of Redmine project id to the Hash from PPMS of group information.
+        #     
         def getPPMSGroupsForProjects(projects)
             ppms_groups_by_project_id = Hash.new
             
@@ -61,6 +76,14 @@ module PPMS
             return ppms_groups_by_project_id
         end
         
+        ##
+        # Load an order from PPMS, adding the cost of the order.
+        #
+        # @param [int] The PPMS order id.
+        # @param [Hash] The PPMS Group information for this order.
+        #
+        # @return [Hash] The hash from PPMS containing the order information.
+        #
         def getPPMSOrder(ppms_order_id, ppms_group)
             
             ppms_order = nil
@@ -98,6 +121,17 @@ module PPMS
 
         private
 
+        ##
+        # Helper for finding a PPMS group for a project. Takes the project's
+        # "PPMS Group ID" value or, failing that, the project name and looks for
+        # a group in PPMS that is called the same. If not found, it repeats the
+        # test for the project's parent project until either there is no parent
+        # project or the parent is one of the mailing roots.
+        #
+        # @param [project] The PPMS project.
+        #
+        # @return [Hash} The hash from PPMS for the group associated with this project.
+        # 
         def ppms_group_for_project(project)
     
             group = @ppms.getGroup(project)
