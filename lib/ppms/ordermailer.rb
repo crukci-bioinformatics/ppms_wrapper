@@ -63,7 +63,7 @@ module PPMS
                         group = ppms_group_for_project(project)
                         if not group.nil?
                             ppms_groups_by_project_id[project_id] = group
-                            $ppmslog.info("PPMS project #{project_id} is group #{group}")
+                            $ppmslog.debug("PPMS project #{project_id} is group #{group}")
                         end
                     rescue OpenSSL::SSL::SSLError => ssl_error
                         $ppmslog.warn("Error fetching group for project #{project_id}: #{ssl_error}")
@@ -97,12 +97,13 @@ module PPMS
                 ppms_order['Cost'] = "Unavailable"
                 begin
                     service_id = @ppms.get_facility_service_id(ppms_order['ServiceID']).to_s
-                    ppms_order['Cost'] = @ppms.getPrice(ppms_order['Quantity'].to_f, affiliation: ppms_group['affiliation'], service: service_id)
-                rescue PPMS::PPMS_Error => failure
+                    ppms_order['Rate'] = @ppms.getRate(affiliation: ppms_group['affiliation'], service: service_id)[0].price
+                    ppms_order['Cost'] = ppms_order['Rate'] * ppms_order['Quantity'].to_f
+                rescue PPMS_Error => failure
                     $ppmslog.error(failure.message)
                 end
               
-                $ppmslog.info("PPMS order #{ppms_order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
+                $ppmslog.debug("PPMS order #{ppms_order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
             rescue OpenSSL::SSL::SSLError => ssl_error
                 $ppmslog.warn("Error fetching order #{ppms_order_id}: #{ssl_error}")
             rescue Net::OpenTimeout => timeout
@@ -112,6 +113,16 @@ module PPMS
             return ppms_order
         end
     
+        ##
+        # Fetch unnotified time order entries and assemble them by group.
+        #
+        # @return [Hash] A complicated hash keyed by PPMS group login (effectively
+        # id) and containing:
+        # "group" - a hash returned from PPMS for the group information;
+        # "issues" - a hash of issue id to Redmine issue object;
+        # "time_entries" - a hash of issue id to array of time order entries (as returned from assembleTimeOrderEntries);
+        # "orders" - a hash of PPMS order id to PPMS order hash.
+        #
         def assembleOrdersToGroups()
             
             time_orders_by_issue = assembleTimeOrderEntries()

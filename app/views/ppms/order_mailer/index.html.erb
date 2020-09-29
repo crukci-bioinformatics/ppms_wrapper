@@ -66,7 +66,7 @@
                     <td><abbr title="<%= time_order.issue.subject %>"><%= time_order.issue.id %></abbr></td>
                     <td><%= hours_minutes(time_order.time_entry.hours) %></td>
                     <td><%= time_order.time_entry.activity %></td>
-                    <td>&pound;<%= '%.2f' % orders[time_order.order_id]['Cost'] %></td>
+                    <td>&pound;<%= '%.2f' % (orders[time_order.order_id]['Rate'] * time_order.time_entry.hours)%></td>
                 </tr>
             <% end %>
         <% end %>
