@@ -124,6 +124,7 @@ module PPMS
         # "issues" - a hash of issue id to Redmine issue object;
         # "time_entries" - a hash of issue id to array of time order entries (as returned from assembleTimeOrderEntries);
         # "orders" - a hash of PPMS order id to PPMS order hash.
+        # "orders_by_issue" - a hash of Redmine issue id to an array of orders for that issue.
         #
         def assembleOrdersToGroups()
             
@@ -148,7 +149,7 @@ module PPMS
                 
                 group_struct = issues_by_group[group_id]
                 if group_struct.nil?
-                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new, :orders => Hash.new)
+                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new, :orders => Hash.new, :orders_by_issue => Hash.new)
                     issues_by_group[group_id] = group_struct
                 end
                 
@@ -162,6 +163,15 @@ module PPMS
                         ppms_order = getPPMSOrder(order_id, ppms_group)
                         group_struct.orders[order_id] = ppms_order
                     end
+                end
+                
+                flat_time_orders.each do |time_order|
+                    issue_id = time_order.issue.id
+                    order_id = time_order.order_id
+                    if group_struct.orders_by_issue[issue_id].nil?
+                        group_struct.orders_by_issue[issue_id] = Hash.new
+                    end
+                    group_struct.orders_by_issue[issue_id][order_id] = group_struct.orders[order_id]
                 end
             end
             
