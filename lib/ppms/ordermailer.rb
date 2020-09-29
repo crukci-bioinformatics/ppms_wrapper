@@ -1,4 +1,6 @@
 require 'ostruct'
+require "mail"
+require "socket"
 
 require_relative 'ppms'
 require_relative 'utils'
@@ -13,6 +15,11 @@ module PPMS
             @root_project_ids = getRootProjects(Setting.plugin_ppms['mailing_root'])
         end
         
+        def self.hours_minutes(time)
+            hm = (time * 60).round.divmod(60)
+            sprintf("%d:%02d", hm[0], hm[1])
+        end
+
         ##
         # Finds time_entry_order objects that have not been mailed already and whose
         # project is under the roots defined by the "mailing_root" setting.
@@ -179,14 +186,43 @@ module PPMS
             return issues_by_group
         end
         
-        def assembleMails()
-        # https://guides.rubyonrails.org/active_record_querying.html
-        #projects = collectProjects(Setting.plugin_ppms['project_root'])
-        #time_orders = TimeEntryOrder.find_by(mailed_at: nil)
-        #TimeEntryOrder.joins(:time_entry).joins(:project).where(:project in projects)
+        def sendMails()
+            template_erb = loadSummaryTemplate()
+            
+            issues_by_group = assembleOrdersToGroups()
+            
+            researcher_field = CustomField.find_by(name: "Researcher Email")
+            experiment_type_field = CustomField.find_by(name: "Experiment Type")
+
+            leader_names = Array.new
+            
+            issues_by_group.values.each do |group_struct|
+                renderer = ERB.new(template_erb, nil, ">")
+                summary_body = renderer.result(binding)
+
+                #recipient = group_struct.group['heademail']
+                # Stop this - testing only
+                recipient = "richard.bowers@cruk.cam.ac.uk"
+
+                $ppmslog.info("Message for #{group_struct.group['heademail']}:\n#{summary_body}")
+                
+                begin
+                    mailReport(summary_body, recipient)
+                rescue StandardError => error
+                    $ppmslog.error("Failed to send charge summary email to #{recipient}: #{error}")
+                end
+                
+                leader_names << group_struct.group['headname']
+            end
+            
+            return leader_names
         end
 
         private
+
+        def my_hours_minutes(time)
+            return OrderMailer::hours_minutes(time)
+        end
 
         ##
         # Helper for finding a PPMS group for a project. Takes the project's
@@ -209,6 +245,62 @@ module PPMS
             end
         
             return group
+        end
+
+        def loadSummaryTemplate()
+            return loadTemplate("billing_summary.html.erb")
+        end
+
+        def loadTemplate(template_file)
+            template_path = File.expand_path("../../assets/templates/", File.dirname(__FILE__))
+
+            path = File.join(template_path, template_file)
+            fd = File.open(path)
+            begin
+                template = fd.read
+            ensure
+                fd.close
+            end
+            
+            return template
+        end
+        
+        def mailReport(text, recipient)
+            sender = "bioinformatics@cruk.cam.ac.uk"
+            subject = "Charges for Bioinformatics Core Support"
+            
+            # Stop this - testing only
+            recipient = "richard.bowers@cruk.cam.ac.uk"
+            
+            mailhost = Redmine::Configuration['email_delivery']['smtp_settings'][:address]
+            mailport = Redmine::Configuration['email_delivery']['smtp_settings'][:port]
+            maildomain = Redmine::Configuration['email_delivery']['smtp_settings'][:domain]
+                
+            mailsettings = {
+                address: mailhost,
+                port: mailport,
+                domain: maildomain,
+                authentication: "plain",
+                tls: false,
+                enable_starttls_auto: false
+            }
+            
+            Mail.defaults do
+                delivery_method :smtp, mailsettings
+            end
+            
+            message = Mail.new do
+                from    sender
+                to      recipient
+                subject subject
+            
+                html_part do
+                    content_type 'text/html; charset=UTF-8'
+                    body text
+                end
+            end
+            
+            # message.deliver
         end
     end
 end

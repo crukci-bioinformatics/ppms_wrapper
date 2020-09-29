@@ -1,0 +1,37 @@
+<% ppms_group = group_struct.group %>
+<% issue_ids = group_struct.issues.keys.sort.reverse %>
+
+<h1>Bioinformatics Core Charges for <%= ppms_group['unitname'] %></h1>
+
+<table class="ppms_report" style="width: 100%">
+    <thead>
+        <tr>
+            <th>Issue</th>
+            <th>Experiment Type</th>
+            <th>Researcher</th>
+            <th>PPMS Order</th>
+            <th>Time</th>
+            <th>Cost</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% issue_ids.each do |issue_id| %>
+            <% issue = group_struct.issues[issue_id] %>
+            <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == experiment_type_field.id }.first&.value %>
+            <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == researcher_field.id }.first&.value %>
+
+            <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
+                <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
+                <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
+                <tr>
+                    <td><abbr title="<%= issue.subject %>"><a href="https://redmine-bioinformatics.cruk.cam.ac.uk/issues/<%= issue.id %>"><%= issue.id %></a></abbr></td>
+                    <td><%= experiment_type %></td>
+                    <td><%= researcher %></td>
+                    <td><%= order_id %></td>
+                    <td><%= my_hours_minutes(total_time) %></td>
+                    <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
+                </tr>
+            <% end %>
+        <% end %>
+    </tbody>
+</table>

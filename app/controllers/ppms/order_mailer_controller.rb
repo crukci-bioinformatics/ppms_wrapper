@@ -1,10 +1,7 @@
-require 'ppms/utils'
 require 'ppms/ordermailer'
 
 class Ppms::OrderMailerController < ApplicationController
 
-    include PPMS::Utilities
-  
     unloadable
   
     helper_method :hours_minutes
@@ -17,12 +14,15 @@ class Ppms::OrderMailerController < ApplicationController
     
     def index
         mailer = PPMS::OrderMailer.new
-      
         @issues_by_group = mailer.assembleOrdersToGroups
+    end
+    
+    def create
+        mailer = PPMS::OrderMailer.new
+        @sent_to = mailer.sendMails
     end
   
     def hours_minutes(time)
-        hm = (time * 60).round.divmod(60)
-        sprintf("%d:%02d", hm[0], hm[1])
+        return PPMS::OrderMailer.hours_minutes(time)
     end
 end

@@ -1,0 +1,20 @@
+<% content_for :header_tags do %>
+<%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
+<% end %>
+
+<h3>Time Orders Awaiting Notification</h3>
+
+<% if @sent_to.empty? %>
+    <p>
+        No messages were sent.
+    </p>
+<% else %>
+    <p>
+        Sent <%= @sent_to.size %> summary emails to:
+    </p>
+    <ul>
+        <% @sent_to.each do |leader| %>
+            <li><%= leader %></li>
+        <% end %>
+    </ul>
+<% end %>
