@@ -149,7 +149,8 @@ module PPMS
                 
                 group_struct = issues_by_group[group_id]
                 if group_struct.nil?
-                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new, :orders => Hash.new, :orders_by_issue => Hash.new)
+                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new,
+                                                  :orders => Hash.new, :orders_by_issue => Hash.new)
                     issues_by_group[group_id] = group_struct
                 end
                 
