@@ -4,10 +4,10 @@
 
 <h3>Time Orders Awaiting Notification</h3>
 
-<% @issues_by_group.each do |group_id, group_hash| %>
-    <% ppms_group = group_hash['group'] %>
-    <% issues = group_hash['issues'] %>
-    <% time_orders_by_issue = group_hash['time_entries'] %>
+<% @issues_by_group.each do |group_id, group_struct| %>
+    <% ppms_group = group_struct.group %>
+    <% issues = group_struct.issues %>
+    <% time_orders_by_issue = group_struct.time_entries %>
 
     <h4><%= ppms_group['unitname'] %></h4>
 
@@ -57,9 +57,9 @@
         </tr>
     </thead>
     <tbody>
-        <% @issues_by_group.values.each do |group_hash| %>
-            <% orders = group_hash['orders'] %>
-            <% group_hash['time_entries'].values.flatten.each do |time_order| %>
+        <% @issues_by_group.values.each do |group_struct| %>
+            <% orders = group_struct.orders %>
+            <% group_struct.time_entries.values.flatten.each do |time_order| %>
                 <tr>
                     <td><%= time_order.order_id %></td>
                     <td><%= time_order.time_entry.user %></td>

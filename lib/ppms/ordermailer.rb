@@ -1,3 +1,5 @@
+require 'ostruct'
+
 require_relative 'ppms'
 require_relative 'utils'
 
@@ -117,7 +119,7 @@ module PPMS
         # Fetch unnotified time order entries and assemble them by group.
         #
         # @return [Hash] A complicated hash keyed by PPMS group login (effectively
-        # id) and containing:
+        # id) to an OpenStruct containing:
         # "group" - a hash returned from PPMS for the group information;
         # "issues" - a hash of issue id to Redmine issue object;
         # "time_entries" - a hash of issue id to array of time order entries (as returned from assembleTimeOrderEntries);
@@ -144,25 +146,21 @@ module PPMS
                 ppms_group = ppms_groups_by_project_id[issue.project.id]
                 group_id = ppms_group["unitlogin"]
                 
-                group_hash = issues_by_group[group_id]
-                if group_hash.nil?
-                    group_hash = Hash.new
-                    group_hash['group'] = ppms_group
-                    group_hash['issues'] = Hash.new
-                    group_hash['time_entries'] = Hash.new
-                    group_hash['orders'] = Hash.new
-                    issues_by_group[group_id] = group_hash
+                group_struct = issues_by_group[group_id]
+                if group_struct.nil?
+                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new, :orders => Hash.new)
+                    issues_by_group[group_id] = group_struct
                 end
                 
-                group_hash['issues'][issue_id] = issue
-                group_hash['time_entries'][issue_id] = time_order_entries
+                group_struct.issues[issue_id] = issue
+                group_struct.time_entries[issue_id] = time_order_entries
                     
                 order_ids = time_order_entries.map { |time_order| time_order.order_id }.uniq
                     
                 order_ids.each do |order_id|
-                    if group_hash[order_id].nil?
+                    if group_struct.orders[order_id].nil?
                         ppms_order = getPPMSOrder(order_id, ppms_group)
-                        group_hash['orders'][order_id] = ppms_order
+                        group_struct.orders[order_id] = ppms_order
                     end
                 end
             end
