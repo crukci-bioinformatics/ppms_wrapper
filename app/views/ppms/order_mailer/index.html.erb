@@ -2,16 +2,14 @@
 <%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
 <% end %>
 
-<h2>Time Orders Awaiting Notification</h2>
+<h2><%= l(:ppms_mailer_title) %></h2>
 
 <% if @issues_by_group.empty? %>
-    <p>
-        There are no outstanding orders to mail.
-    </p>
+    <p><%= l(:ppms_mailer_no_orders) %></p>
 <% else %>
     <%= form_tag '/ppms/order_mailer' do %>
         <p>
-            <%= submit_tag "Send these summaries to group leaders" %>
+            <%= submit_tag l(:ppms_mailer_send_button) %>
         </p>
     <% end %>
 
@@ -23,15 +21,13 @@
 
         <table class="ppms_report" style="width: 100%">
             <thead>
-                <tr>
-                    <th>Issue</th>
-                    <th>Experiment Type</th>
-                    <th>Researcher</th>
-                    <th>PPMS Order</th>
-                    <th>Time</th>
-                    <th>Cost</th>
-                    <th>Time</th>
-                </tr>
+                <th><%= l(:ppms_mailer_label_issue) %></th>
+                <th><%= l(:ppms_mailer_label_experiment) %></th>
+                <th><%= l(:ppms_mailer_label_researcher) %></th>
+                <th><%= l(:ppms_mailer_label_order) %></th>
+                <th><%= l(:ppms_mailer_label_time) %></th>
+                <th><%= l(:ppms_mailer_label_cost) %></th>
+                <th><%= l(:ppms_mailer_label_time) %></th>
             </thead>
             <tbody>
                 <% issue_ids.each do |issue_id| %>
@@ -65,19 +61,17 @@
 
     <hr/>
 
-    <h3>Raw Time Entries</h3>
+    <h3><%= l(:ppms_mailer_raw_data) %></h3>
 
     <table class="ppms_report">
         <thead>
-            <tr>
-                <th>Order id</th>
-                <th>Logged By</th>
-                <th>Issue</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Activity</th>
-                <th>Price</th>
-            </tr>
+            <th><%= l(:ppms_mailer_label_order) %></th>
+            <th><%= l(:ppms_mailer_label_logger) %></th>
+            <th><%= l(:ppms_mailer_label_issue) %></th>
+            <th><%= l(:ppms_mailer_label_date) %></th>
+            <th><%= l(:ppms_mailer_label_time) %></th>
+            <th><%= l(:ppms_mailer_label_activity) %></th>
+            <th><%= l(:ppms_mailer_label_cost) %></th>
         </thead>
         <tbody>
             <% @issues_by_group.values.each do |group_struct| %>

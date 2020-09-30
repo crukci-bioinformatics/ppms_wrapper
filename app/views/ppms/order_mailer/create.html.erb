@@ -2,20 +2,23 @@
 <%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
 <% end %>
 
-<h3>Time Orders Awaiting Notification</h3>
+<h2><%= l(:ppms_mailer_title) %></h2>
 
 <% if @sent_to.empty? %>
-    <p>
-        No messages were sent.
-    </p>
+    <p><%= l(:ppms_mailer_messages_none) %></p>
 <% else %>
     <% successful = @sent_to.select { |leader, state| state == "Sent" } %>
     <% failed = @sent_to.select { |leader, state| state != "Sent" } %>
 
+    <% case successful.size %>
+        <% when 0 %>
+            <% nil %>
+        <% when 1 %>
+            <p><%= l(:ppms_mailer_messages_success_one) %></p>
+        <% else %>
+            <p><%= l(:ppms_mailer_messages_success_many, :count => successful.size) %></p>
+    <% end %>
     <% if not successful.empty? %>
-        <p>
-            Sent <%= successful.size %> summary email(s) to:
-        </p>
         <ul>
             <% successful.keys.each do |leader| %>
                 <li><%= leader %></li>
@@ -23,17 +26,20 @@
         </ul>
     <% end %>
 
+    <% case failed.size %>
+        <% when 0 %>
+            <% nil %>
+        <% when 1 %>
+            <p><%= l(:ppms_mailer_messages_fail_one) %></p>
+        <% else %>
+            <p><%= l(:ppms_mailer_messages_fail_many, :count => failed.size) %></p>
+    <% end %>
     <% if not failed.empty? %>
-        <p>
-            <%= failed.size %> summary email(s) did not get sent because of failures:
-        </p>
         <ul>
             <% failed.each do |leader, message| %>
                 <li><%= leader %>: <%= message %></li>
             <% end %>
         </ul>
-        <p>
-            Failures may be due to address problems or issues with the Redmine mail set up.
-        </p>
+        <p><%= l(:ppms_mailer_failure_reasons) %></p>
     <% end %>
 <% end %>

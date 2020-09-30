@@ -335,7 +335,7 @@ module PPMS
         def mailReport(message_body, raw_data, recipient)
             sender = Setting.plugin_ppms['mailing_sender']
             sender = "bioinformatics@cruk.cam.ac.uk" if sender.nil? or sender.empty?
-            
+
             subject = Setting.plugin_ppms['mailing_subject']
             subject = "Charges for Bioinformatics Core Support" if subject.nil? or subject.empty?
 
