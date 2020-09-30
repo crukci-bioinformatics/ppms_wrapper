@@ -333,8 +333,11 @@ module PPMS
         # @param [string] The recipient's email address.
         #
         def mailReport(message_body, raw_data, recipient)
-            sender = "bioinformatics@cruk.cam.ac.uk"
-            subject = "Charges for Bioinformatics Core Support"
+            sender = Setting.plugin_ppms['mailing_sender']
+            sender = "bioinformatics@cruk.cam.ac.uk" if sender.nil? or sender.empty?
+            
+            subject = Setting.plugin_ppms['mailing_subject']
+            subject = "Charges for Bioinformatics Core Support" if subject.nil? or subject.empty?
 
             Mail.defaults do
                 delivery_method :smtp, @@smtp_settings
@@ -351,7 +354,7 @@ module PPMS
                 end
             end
 
-            if not raw_date.nil?
+            if not raw_data.nil?
                 message.attachments['time_entries.csv'] = { :mime_type => 'text/csv; charset=UTF-8', :content => raw_data }
             end
 
