@@ -1,5 +1,6 @@
-require 'ostruct'
+require 'csv'
 require "mail"
+require 'ostruct'
 
 require_relative 'ppms'
 require_relative 'utils'
@@ -218,10 +219,13 @@ module PPMS
 
                 $ppmslog.info("Message for #{recipient}:\n#{summary_body}")
 
+                raw_data = createCSV(group_struct)
+                $ppmslog.info("CSV is:\n#{raw_data}")
+
                 leader_names << group_struct.group['headname']
 
                 begin
-                    mailReport(summary_body, recipient)
+                    mailReport(summary_body, raw_data, recipient)
                 rescue StandardError => error
                     $ppmslog.error("Failed to send charge summary email to #{recipient}: #{error}")
                 end
@@ -279,7 +283,7 @@ module PPMS
             return template
         end
 
-        def mailReport(text, recipient)
+        def mailReport(text, raw_data, recipient)
             sender = "bioinformatics@cruk.cam.ac.uk"
             subject = "Charges for Bioinformatics Core Support"
 
@@ -301,7 +305,31 @@ module PPMS
                 end
             end
 
+            message.attachments['time_entries.csv'] = { :mime_type => 'text/csv; charset=UTF-8', :content => raw_data }
+
             message.deliver!
+        end
+
+        def createCSV(group_struct)
+            time_orders = group_struct.time_entries.values.flatten
+            csv_string = CSV.generate do |csv|
+                csv << [ "PPMS Order", "PPMS Invoice", "Logged By", "Bioinformatics Issue", "Date", "Time", "Activity", "Rate(£/h)","Cost(£)" ]
+
+                time_orders.each do |time_order|
+                    order = group_struct.orders[time_order.order_id]
+                    csv << [
+                        time_order.order_id,
+                        order['Invoiced'],
+                        time_order.time_entry.user,
+                        time_order.issue.id,
+                        time_order.time_entry.spent_on.strftime('%d/%m/%Y'),
+                        my_hours_minutes(time_order.time_entry.hours),
+                        time_order.time_entry.activity,
+                        '%.2f' % order['Rate'],
+                        '%.2f' % (order['Rate'] * time_order.time_entry.hours)
+                    ]
+                end
+            end
         end
     end
 end

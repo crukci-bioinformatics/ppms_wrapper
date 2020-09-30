@@ -2,7 +2,7 @@
 <%= stylesheet_link_tag 'ppms.css', :plugin => 'ppms', :media => 'all' %>
 <% end %>
 
-<h3>Time Orders Awaiting Notification</h3>
+<h2>Time Orders Awaiting Notification</h2>
 
 <% if @issues_by_group.empty? %>
     <p>
@@ -11,16 +11,16 @@
 <% else %>
     <%= form_tag '/ppms/order_mailer' do %>
         <p>
-            <%= submit_tag "Click to send these summaries to group leaders" %>
-        </p> 
+            <%= submit_tag "Send these summaries to group leaders" %>
+        </p>
     <% end %>
-    
+
     <% @issues_by_group.each do |group_id, group_struct| %>
         <% ppms_group = group_struct.group %>
         <% issue_ids = group_struct.issues.keys.sort.reverse %>
-    
-        <h4><%= ppms_group['unitname'] %></h4>
-    
+
+        <h3><%= ppms_group['unitname'] %></h3>
+
         <table class="ppms_report" style="width: 100%">
             <thead>
                 <tr>
@@ -38,7 +38,7 @@
                     <% issue = group_struct.issues[issue_id] %>
                     <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
                     <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == @researcher_field.id }.first&.value %>
-    
+
                     <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
                         <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
                         <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
@@ -59,15 +59,21 @@
                 <% end %>
             </tbody>
         </table>
+
+        <br/>
     <% end %>
-    
-    
+
+    <hr/>
+
+    <h3>Raw Time Entries</h3>
+
     <table class="ppms_report">
         <thead>
             <tr>
                 <th>Order id</th>
                 <th>Logged By</th>
                 <th>Issue</th>
+                <th>Date</th>
                 <th>Time</th>
                 <th>Activity</th>
                 <th>Price</th>
@@ -81,6 +87,7 @@
                         <td><%= time_order.order_id %></td>
                         <td><%= time_order.time_entry.user %></td>
                         <td><abbr title="<%= time_order.issue.subject %>"><a href="/issues/<%= time_order.issue.id %>"><%= time_order.issue.id %></a></abbr></td>
+                        <td><%= time_order.time_entry.spent_on.strftime('%d/%m') %></td>,
                         <td><%= hours_minutes(time_order.time_entry.hours) %></td>
                         <td><%= time_order.time_entry.activity %></td>
                         <td>&pound;<%= '%.2f' % (orders[time_order.order_id]['Rate'] * time_order.time_entry.hours)%></td>
