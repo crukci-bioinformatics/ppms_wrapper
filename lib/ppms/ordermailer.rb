@@ -1,4 +1,5 @@
 require 'csv'
+require 'date'
 require "mail"
 require 'ostruct'
 
@@ -10,7 +11,7 @@ module PPMS
 
         include Utilities
 
-        @@testing_sender = "richard.bowers@cruk.cam.ac.uk"
+        @@testing_recipient = "richard.bowers@cruk.cam.ac.uk"
 
         @@smtp_settings = {
             address: Redmine::Configuration['email_delivery']['smtp_settings'][:address],
@@ -28,6 +29,12 @@ module PPMS
             @root_project_ids = getRootProjects(Setting.plugin_ppms['mailing_root'])
         end
 
+        ##
+        # Convert a float of fractional hours into hours:minutes.
+        #
+        # @param [float] Hours as a decimal.
+        # @return [string] Hours as h:mm.
+        #
         def self.hours_minutes(time)
             hm = (time * 60).round.divmod(60)
             sprintf("%d:%02d", hm[0], hm[1])
@@ -49,7 +56,6 @@ module PPMS
             # Find time entry order that have not been mailed whose project is in
             # the projects under the mailing roots.
             time_orders = TimeEntryOrder.joins(time_entry: :project).where(mailed_at: nil, projects: {id: mailing_project_ids })
-            $ppmslog.info("Time entry orders to mail: #{time_orders.size}")
 
             orders_by_issue = Hash.new
 
@@ -85,7 +91,7 @@ module PPMS
                         group = ppms_group_for_project(project)
                         if not group.nil?
                             ppms_groups_by_project_id[project_id] = group
-                            $ppmslog.debug("PPMS project #{project_id} is group #{group}")
+                            # $ppmslog.debug("PPMS project #{project_id} is group #{group}")
                         end
                     rescue OpenSSL::SSL::SSLError => ssl_error
                         $ppmslog.warn("Error fetching group for project #{project_id}: #{ssl_error}")
@@ -125,7 +131,7 @@ module PPMS
                     $ppmslog.error(failure.message)
                 end
 
-                $ppmslog.debug("PPMS order #{ppms_order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
+                # $ppmslog.debug("PPMS order #{ppms_order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
             rescue OpenSSL::SSL::SSLError => ssl_error
                 $ppmslog.warn("Error fetching order #{ppms_order_id}: #{ssl_error}")
             rescue Net::OpenTimeout => timeout
@@ -199,6 +205,14 @@ module PPMS
             return issues_by_group
         end
 
+        ##
+        # Assemble time entry orders that have not been mailed and are under relevant projects
+        # to the group leaders to whom those projects belong.
+        #
+        # @return [Hash] A hash of group leader name to status message. If the email was sent
+        # without error, the status will be "Sent". If there was a failure, the status message
+        # will be the text of the exception thrown when trying to send.
+        #
         def sendMails()
             template_erb = loadSummaryTemplate()
 
@@ -207,30 +221,41 @@ module PPMS
             researcher_field = CustomField.find_by(name: "Researcher Email")
             experiment_type_field = CustomField.find_by(name: "Experiment Type")
 
-            leader_names = Array.new
+            leader_names = Hash.new
 
             issues_by_group.values.each do |group_struct|
                 renderer = ERB.new(template_erb, nil, ">")
                 summary_body = renderer.result(binding)
 
-                #recipient = group_struct.group['heademail']
-                # Stop this - testing only
-                recipient = @@testing_sender
-
-                $ppmslog.info("Message for #{recipient}:\n#{summary_body}")
-
                 raw_data = createCSV(group_struct)
-                $ppmslog.info("CSV is:\n#{raw_data}")
 
-                leader_names << group_struct.group['headname']
+                recipient = group_struct.group['heademail']
+
+                if Rails.env != 'production'
+                    recipient = @@testing_recipient
+                end
+
+                leader_name = group_struct.group['headname']
 
                 begin
                     mailReport(summary_body, raw_data, recipient)
+
+                    leader_names[leader_name] = "Sent"
+
+                    # Set the mailed_at time on the time_entry_order objects. This will
+                    # stop them being sent again.
+
+                    timestamp = DateTime.now
+
+                    group_struct.time_entries.values.flatten.each do |time_order|
+                        time_order.mailed_at = timestamp
+                        time_order.save
+                    end
                 rescue StandardError => error
                     $ppmslog.error("Failed to send charge summary email to #{recipient}: #{error}")
-                end
 
-                break # Remove once sure it's working.
+                    leader_names[leader_name] = error.message
+                end
             end
 
             return leader_names
@@ -238,6 +263,12 @@ module PPMS
 
         private
 
+        ##
+        # Instance version of hours_minutes, which allows it to be used in the
+        # binding for creating the email body.
+        # @param [float] Hours as a decimal.
+        # @return [string] Hours as h:mm.
+        #
         def my_hours_minutes(time)
             return OrderMailer::hours_minutes(time)
         end
@@ -265,10 +296,21 @@ module PPMS
             return group
         end
 
+        ##
+        # Load the ERB template for creating the email body.
+        #
+        # return [string] The content of the template file.
+        #
         def loadSummaryTemplate()
             return loadTemplate("billing_summary.html.erb")
         end
 
+        ##
+        # Load a template file. The templates should be in /assets/templates.
+        #
+        # @param [string] template_file The name of the template file.
+        # return [string] The content of the template file.
+        #
         def loadTemplate(template_file)
             template_path = File.expand_path("../../assets/templates/", File.dirname(__FILE__))
 
@@ -283,12 +325,16 @@ module PPMS
             return template
         end
 
-        def mailReport(text, raw_data, recipient)
+        ##
+        # Send the summary report to the given recipient.
+        #
+        # @param [string] The email body.
+        # @param [string] The raw data, as CSV.
+        # @param [string] The recipient's email address.
+        #
+        def mailReport(message_body, raw_data, recipient)
             sender = "bioinformatics@cruk.cam.ac.uk"
             subject = "Charges for Bioinformatics Core Support"
-
-            # Stop this - testing only
-            recipient = @@testing_sender
 
             Mail.defaults do
                 delivery_method :smtp, @@smtp_settings
@@ -301,15 +347,24 @@ module PPMS
 
                 html_part do
                     content_type 'text/html; charset=UTF-8'
-                    body text
+                    body message_body
                 end
             end
 
-            message.attachments['time_entries.csv'] = { :mime_type => 'text/csv; charset=UTF-8', :content => raw_data }
+            if not raw_date.nil?
+                message.attachments['time_entries.csv'] = { :mime_type => 'text/csv; charset=UTF-8', :content => raw_data }
+            end
 
             message.deliver!
         end
 
+        ##
+        # Create the CSV attachment for a group.
+        #
+        # @param [OpenStruct] The structure for the group information.
+        #
+        # @return [string] The individual time entries in CSV form.
+        #
         def createCSV(group_struct)
             time_orders = group_struct.time_entries.values.flatten
             csv_string = CSV.generate do |csv|

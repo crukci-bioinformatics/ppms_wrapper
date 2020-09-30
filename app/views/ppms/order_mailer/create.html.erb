@@ -9,12 +9,31 @@
         No messages were sent.
     </p>
 <% else %>
-    <p>
-        Sent <%= @sent_to.size %> summary emails to:
-    </p>
-    <ul>
-        <% @sent_to.each do |leader| %>
-            <li><%= leader %></li>
-        <% end %>
-    </ul>
+    <% successful = @sent_to.select { |leader, state| state == "Sent" } %>
+    <% failed = @sent_to.select { |leader, state| state != "Sent" } %>
+
+    <% if not successful.empty? %>
+        <p>
+            Sent <%= successful.size %> summary email(s) to:
+        </p>
+        <ul>
+            <% successful.keys.each do |leader| %>
+                <li><%= leader %></li>
+            <% end %>
+        </ul>
+    <% end %>
+
+    <% if not failed.empty? %>
+        <p>
+            <%= failed.size %> summary email(s) did not get sent because of failures:
+        </p>
+        <ul>
+            <% failed.each do |leader, message| %>
+                <li><%= leader %>: <%= message %></li>
+            <% end %>
+        </ul>
+        <p>
+            Failures may be due to address problems or issues with the Redmine mail set up.
+        </p>
+    <% end %>
 <% end %>
