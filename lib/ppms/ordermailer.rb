@@ -229,7 +229,8 @@ module PPMS
                 renderer = ERB.new(template_erb, nil, ">")
                 summary_body = renderer.result(binding)
 
-                raw_data = createCSV(group_struct)
+                # raw_data = createCSV(group_struct)
+                raw_data = nil
 
                 recipient = group_struct.group['heademail']
 
