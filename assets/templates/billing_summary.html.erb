@@ -32,17 +32,16 @@ table.ppms_report td
 <h2>Bioinformatics Core Charges for <%= ppms_group['unitname'] %></h2>
 
 <p>
-    Hover over the issue id for a description. Individual time entries are given
+    Hover over the issue number for its description. Individual time entries are given
     in the attached CSV file.
 </p>
 
 <table class="ppms_report" style="width: 100%">
     <thead>
         <tr>
-            <th>Issue</th>
+            <th>Bioinformatics Issue#</th>
             <th>Experiment Type</th>
             <th>Researcher</th>
-            <th>PPMS Order</th>
             <th>Time</th>
             <th>Cost</th>
         </tr>
@@ -57,10 +56,9 @@ table.ppms_report td
                 <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
                 <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
                 <tr>
-                    <td><abbr title="<%= issue.subject %>"><a href="https://redmine-bioinformatics.cruk.cam.ac.uk/issues/<%= issue.id %>"><%= issue.id %></a></abbr></td>
+                    <td><abbr title="<%= issue.subject %>"><%= issue.id %></abbr></td>
                     <td><%= experiment_type %></td>
                     <td><%= researcher %></td>
-                    <td><abbr title="<%= ppms_order['Invoiced'] %>"><%= order_id %></abbr></td>
                     <td><%= my_hours_minutes(total_time) %></td>
                     <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
                 </tr>

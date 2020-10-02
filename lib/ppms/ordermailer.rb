@@ -371,7 +371,7 @@ module PPMS
         def createCSV(group_struct)
             time_orders = group_struct.time_entries.values.flatten
             csv_string = CSV.generate do |csv|
-                csv << [ "PPMS Order", "PPMS Invoice", "Logged By", "Bioinformatics Issue", "Date", "Time", "Activity", "Rate(£/h)","Cost(£)" ]
+                csv << [ "PPMS Order", "PPMS Invoice", "Logged By", "Bioinformatics Issue", "Issue#","Date", "Time", "Activity", "Rate(£/h)","Cost(£)" ]
 
                 time_orders.each do |time_order|
                     order = group_struct.orders[time_order.order_id]
@@ -379,6 +379,7 @@ module PPMS
                         time_order.order_id,
                         order['Invoiced'],
                         time_order.time_entry.user,
+                        time_order.issue.subject,
                         time_order.issue.id,
                         time_order.time_entry.spent_on.strftime('%d/%m/%Y'),
                         my_hours_minutes(time_order.time_entry.hours),
