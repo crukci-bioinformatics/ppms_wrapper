@@ -13,6 +13,8 @@ module PPMS
 
         @@testing_recipient = "richard.bowers@cruk.cam.ac.uk"
 
+        @@irrelevant_date = DateTime.new(1974, 9, 19, 18, 0, 0, '+1')
+
         @@smtp_settings = {
             address: Redmine::Configuration['email_delivery']['smtp_settings'][:address],
             port: Redmine::Configuration['email_delivery']['smtp_settings'][:port],
@@ -261,11 +263,26 @@ module PPMS
             return leader_names
         end
 
+        ##
+        # Put an arbitrary date into the time entry order "mailed_at" column for all
+        # entries that do not already have a mailed time and whose project is not a
+        # project under the mailing roots.
+        # This marks those entries as handled so they won't be picked up if the mailing
+        # root changes in the future.
+        #
+        def markIrrelevantTimeEntries()
+            mailing_project_ids = collectProjects(Setting.plugin_ppms['mailing_root'])
+
+            TimeEntryOrder.joins(time_entry: :project).where(mailed_at: nil).where.not(projects: {id: mailing_project_ids }).update_all(mailed_at: @@irrelevant_date)
+        end
+
+
         private
 
         ##
         # Instance version of hours_minutes, which allows it to be used in the
         # binding for creating the email body.
+        #
         # @param [float] Hours as a decimal.
         # @return [string] Hours as h:mm.
         #

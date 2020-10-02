@@ -19,6 +19,7 @@ class Ppms::OrderMailerController < ApplicationController
     
     def create
         mailer = PPMS::OrderMailer.new
+        mailer.markIrrelevantTimeEntries
         @sent_to = mailer.sendMails
     end
   
