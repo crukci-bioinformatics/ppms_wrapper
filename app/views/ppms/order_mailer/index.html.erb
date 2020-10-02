@@ -42,12 +42,12 @@
                             <td><abbr title="<%= issue.subject %>"><a href="/issues/<%= issue.id %>"><%= issue.id %></a></abbr></td>
                             <td><%= experiment_type %></td>
                             <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
-                            <td><%= order_id %></td>
+                            <td><a href="<%= ppms_url(order_id) %>" target="_blank"><%= order_id %></a></td>
                             <td><%= hours_minutes(total_time) %></td>
                             <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
                             <td>
                                 <% time_orders.each do |entry| %>
-                                    <%= '%.2f' % entry.time_entry.hours %> <%= entry.time_entry.user %><br />
+                                    <%= hours_minutes(entry.time_entry.hours) %> <%= entry.time_entry.user %><br />
                                 <% end %>
                             </td>
                         </tr>
@@ -78,7 +78,7 @@
                 <% orders = group_struct.orders %>
                 <% group_struct.time_entries.values.flatten.each do |time_order| %>
                     <tr>
-                        <td><%= time_order.order_id %></td>
+                        <td><a href="<%= ppms_url(time_order.order_id) %>" target="_blank"><%= time_order.order_id %></a></td>
                         <td><%= time_order.time_entry.user %></td>
                         <td><abbr title="<%= time_order.issue.subject %>"><a href="/issues/<%= time_order.issue.id %>"><%= time_order.issue.id %></a></abbr></td>
                         <td><%= time_order.time_entry.spent_on.strftime('%d/%m') %></td>,

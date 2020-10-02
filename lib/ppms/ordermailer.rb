@@ -122,11 +122,11 @@ module PPMS
                 ppms_order = @ppms.getOrder(ppms_order_id)[ppms_order_id.to_s]
 
                 # Note that the service id we're looking for is the core facility id * 10000 + the service id.
-                # This is handled by PPMS::get_facility_service_id
+                # This is handled by PPMS::getFacilityServiceId
 
                 ppms_order['Cost'] = "Unavailable"
                 begin
-                    service_id = @ppms.get_facility_service_id(ppms_order['ServiceID']).to_s
+                    service_id = @ppms.getFacilityServiceId(ppms_order['ServiceID']).to_s
                     ppms_order['Rate'] = @ppms.getRate(affiliation: ppms_group['affiliation'], service: service_id)[0].price
                     ppms_order['Cost'] = ppms_order['Rate'] * ppms_order['Quantity'].to_f
                 rescue PPMS_Error => failure
@@ -141,6 +141,53 @@ module PPMS
             end
 
             return ppms_order
+        end
+        
+        ##
+        # Add detail to a collection of PPMS orders by getting the invoice ids listed amongst
+        # the orders out, fetching the details as returned by the "Custom invoice report - current core"
+        # PPMS report and adding that detail to each order given. Adds this information as
+        # "InvoiceDetail" to the PPMS order hash.
+        #
+        # @param |Array] ppms_orders An array of PPMS order hash objects.
+        #
+        def addInvoiceDetail(ppms_orders)
+            invoice_ids = ppms_orders.map{ |order| order['Invoiced'] }.uniq
+            
+            # For each unique invoice id, get the orders in that invoice from report 1848.
+                
+            details_by_order_id = Hash.new
+            invoice_ids.each do |invoice_id|
+                if !invoice_id.nil? and !invoice_id.empty?
+                    invoice_details = @ppms.getInvoicedOrder(invoice_id)
+                    details_by_order_id.update(invoice_details) unless invoice_details.nil?
+                end
+            end
+            
+            # Add the invoice information for the order if it is available. Also update the
+            # rate and cost.
+            
+            ppms_orders.each do |ppms_order|
+                order_id = ppms_order['Order ref.'].to_i
+                invoice = details_by_order_id[order_id]
+                ppms_order['InvoiceDetail'] = invoice
+                    
+                unless invoice.nil?
+                    final_amount = invoice['Final amount'].to_f
+                    quantity = invoice['Duration (minutes booked)/Quantity'].to_f
+                        
+                    ppms_order['Cost'] = final_amount
+
+                    if quantity >= 0.001
+                        # To prevent divide by zero. Otherwise leave as it is.
+                        ppms_order['Rate'] = final_amount / quantity
+                    end
+                    
+                    #$ppmslog.info("Added invoice detail to order #{order_id}: #{ppms_order}")
+                else
+                    $ppmslog.warn("The is no invoice detail for order #{order_id}.")
+                end
+            end
         end
 
         ##
@@ -203,6 +250,13 @@ module PPMS
                     group_struct.orders_by_issue[issue_id][order_id] = group_struct.orders[order_id]
                 end
             end
+            
+            # Add the invoice details to the orders.
+            
+            combined_orders = Hash.new
+            issues_by_group.values.each { |group_struct| combined_orders.update(group_struct.orders) }
+                
+            addInvoiceDetail(combined_orders.values)
 
             return issues_by_group
         end

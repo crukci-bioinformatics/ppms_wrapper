@@ -379,7 +379,7 @@ module PPMS
       @prices = Array.new()
       rows[1..rows.length-1].each do |row|
         @prices << OpenStruct.new(:priority => row[prioCol].to_i,
-                                  :service => get_facility_service_id(row[serviceCol]).to_s,
+                                  :service => getFacilityServiceId(row[serviceCol]).to_s,
                                   :affiliation => row[affCol].to_i,
                                   :project => row[projCol].to_i,
                                   :price => row[priceCol].to_f)
@@ -402,7 +402,7 @@ module PPMS
           data.each do |row|
             rowDat = OpenStruct.new(
                            :priority => row["priority"],
-                           :service => get_facility_service_id(row["service"]).to_s,
+                           :service => getFacilityServiceId(row["service"]).to_s,
                            :affiliation => row["affiliationid"],
                            :project => row["projectid"],
                            :price => row["price"],
@@ -516,13 +516,55 @@ module PPMS
       return affId
     end
 
+    ##
     # The service id returned in, for example, getPrices is:
     # core facility id * 10000 + service id
     #
     # Some cases will need to convert the returned integer into a string
     # for matching.
-    def get_facility_service_id(service_id)
-      service_id.to_i + @@coreFacilityID * 10000 
+    #
+    # @return [int] The service id within our core facility.
+    #
+    def getFacilityServiceId(service_id)
+        return service_id.to_i + @@coreFacilityID * 10000 
+    end
+    
+    ##
+    # Get the invoice report for the given invoice id. This is report 1848, or
+    # "Custom invoice report - current core". It fetches the information from
+    # PPMS and creates a map by order id. Each order will appear no more than
+    # once.
+    #
+    # @param invoice_id |string| The invoice identifier as returned in the rows
+    # from the "getorders" PUMAPI call.
+    #
+    # @param verbose |boolean| Whether to print verbose information during the
+    # PPMS call. Default false.
+    # 
+    # @return |Hash| A hash of order id (integer) to the invoice detail hash for
+    # that order.
+    #
+    def getInvoicedOrder(invoice_id, verbose = false)
+        request = Net::HTTP::Post.new(@api2)
+        request.set_form_data("apikey" => @key, "action" => "Report1848", "format" => "json", "invoiceid" => invoice_id)
+        result = makeRequest2(request, __method__, verbose)
+        return result if result.nil?
+
+        by_order_id = Hash.new
+        
+        begin
+            order_maps = JSON.parse(result.body)
+            unless order_maps.nil?
+                order_maps.each do |order|
+                    order_id = order['Ref (session/order)'].to_i
+                    by_order_id[order_id] = order
+                end
+            end
+        rescue JSON::ParserError => error
+            $ppmslog.error("Failed to retrieve orders for invoice #{invoice_id}: #{error.message}")
+        end
+        
+        return by_order_id
     end
   end
 end

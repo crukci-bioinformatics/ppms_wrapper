@@ -4,7 +4,7 @@ class Ppms::OrderMailerController < ApplicationController
 
     unloadable
   
-    helper_method :hours_minutes
+    helper_method :hours_minutes, :ppms_url
 
     def initialize
         super
@@ -25,5 +25,10 @@ class Ppms::OrderMailerController < ApplicationController
   
     def hours_minutes(time)
         return PPMS::OrderMailer.hours_minutes(time)
+    end
+    
+    def ppms_url(order_id)
+        base_url = Setting.plugin_ppms['api_url']
+        return "https://#{base_url}/vorder/?orderid=#{order_id}"
     end
 end
