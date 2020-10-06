@@ -1,5 +1,6 @@
 <% ppms_group = group_struct.group %>
 <% issue_ids = group_struct.issues.keys.sort.reverse %>
+<% max_subject_length = 32 %>
 
 <style>
 table.ppms_report
@@ -14,7 +15,7 @@ table.ppms_report th
     text-align: left;
     font-weight: bold;
     font-size: 90%;
-    padding: 2px;
+    padding: 2px 4px 2px 4px;
     border: 1px solid black;
     border-collapse: collapse;
 }
@@ -23,7 +24,7 @@ table.ppms_report td
 {
     text-align: left;
     font-weight: normal;
-    padding: 2px;
+    padding: 2px 4px 2px 4px;
     border: 1px solid black;
     border-collapse: collapse;
 }
@@ -39,28 +40,34 @@ table.ppms_report td
 <table class="ppms_report" style="width: 100%">
     <thead>
         <tr>
-            <th>Bioinformatics Issue#</th>
-            <th>Experiment Type</th>
+            <th>Bioinformatics Issue</th>
             <th>Researcher</th>
             <th>Time</th>
             <th>Cost</th>
+            <th>Contributors</th>
         </tr>
     </thead>
     <tbody>
         <% issue_ids.each do |issue_id| %>
             <% issue = group_struct.issues[issue_id] %>
-            <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == experiment_type_field.id }.first&.value %>
+            <% issue_title = "(#{issue.id}) #{issue.subject}" %>
+            <% issue_title_s = truncate(issue_title, :length => max_subject_length, :separator => ' ') %>
             <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == researcher_field.id }.first&.value %>
 
             <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
                 <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
                 <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
+
                 <tr>
-                    <td><abbr title="<%= issue.subject %>"><%= issue.id %></abbr></td>
-                    <td><%= experiment_type %></td>
+                    <% if issue_title == issue_title_s %>
+                        <td><%= issue_title %></td>
+                    <% else %>
+                        <td><abbr title="<%= issue.subject %>"><%= issue_title_s %></abbr></td>
+                    <% end %>
                     <td><%= researcher %></td>
                     <td><%= my_hours_minutes(total_time) %></td>
                     <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
+                    <td><%= contributors(time_orders).join('<br/>') %></td>
                 </tr>
             <% end %>
         <% end %>

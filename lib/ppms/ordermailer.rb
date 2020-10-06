@@ -1,4 +1,3 @@
-require 'csv'
 require 'date'
 require "mail"
 require 'ostruct'
@@ -10,8 +9,10 @@ module PPMS
     class OrderMailer
 
         include Utilities
-
+        include ActionView::Helpers::TextHelper
+        
         @@testing_recipient = "richard.bowers@cruk.cam.ac.uk"
+        @@production_bcc = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk", "gordon.brown@cruk.cam.ac.uk" ]
 
         @@irrelevant_date = DateTime.new(1974, 9, 19, 18, 0, 0, '+1')
 
@@ -367,6 +368,32 @@ module PPMS
 
             return group
         end
+        
+        ##
+        # Helper for the outgoing email "contributors" column. Takes the time entry
+        # orders given and assigns a total for each user who has contributed. It then
+        # sorts those users into descending time logged, and returns their names in
+        # that order.
+        #
+        # @param time_entry_orders |Array| An array of TimeEntryOrder objects.
+        #
+        # @return |Array| A list of user names who have contributed to the given time
+        # entries.
+        #
+        def contributors(time_entry_orders)
+            by_id = Hash.new
+            time_entry_orders.each do |teo|
+                user = teo.time_entry.user
+                if by_id[user.id].nil?
+                    by_id[user.id] = OpenStruct.new(:id => user.id, :name => user.name, :time => 0)
+                end
+                by_id[user.id].time = by_id[user.id].time + teo.time_entry.hours
+            end
+            
+            by_time = by_id.values.sort_by { |s| -s.time }
+            
+            return by_time.map { |s| s.name }
+        end
 
         ##
         # Load the ERB template for creating the email body.
@@ -426,41 +453,15 @@ module PPMS
                 end
             end
 
+            if Rails.env == 'production'
+                message.bcc = @@production_bcc
+            end
+
             if not raw_data.nil?
                 message.attachments['time_entries.csv'] = { :mime_type => 'text/csv; charset=UTF-8', :content => raw_data }
             end
 
             message.deliver!
-        end
-
-        ##
-        # Create the CSV attachment for a group.
-        #
-        # @param [OpenStruct] The structure for the group information.
-        #
-        # @return [string] The individual time entries in CSV form.
-        #
-        def createCSV(group_struct)
-            time_orders = group_struct.time_entries.values.flatten
-            csv_string = CSV.generate do |csv|
-                csv << [ "PPMS Order", "PPMS Invoice", "Logged By", "Bioinformatics Issue", "Issue#","Date", "Time", "Activity", "Rate(£/h)","Cost(£)" ]
-
-                time_orders.each do |time_order|
-                    order = group_struct.orders[time_order.order_id]
-                    csv << [
-                        time_order.order_id,
-                        order['Invoiced'],
-                        time_order.time_entry.user,
-                        time_order.issue.subject,
-                        time_order.issue.id,
-                        time_order.time_entry.spent_on.strftime('%d/%m/%Y'),
-                        my_hours_minutes(time_order.time_entry.hours),
-                        time_order.time_entry.activity,
-                        '%.2f' % order['Rate'],
-                        '%.2f' % (order['Rate'] * time_order.time_entry.hours)
-                    ]
-                end
-            end
         end
     end
 end
