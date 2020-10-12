@@ -385,7 +385,7 @@ module PPMS
             time_entry_orders.each do |teo|
                 user = teo.time_entry.user
                 if by_id[user.id].nil?
-                    by_id[user.id] = OpenStruct.new(:id => user.id, :name => user.name, :time => 0)
+                    by_id[user.id] = OpenStruct.new(:id => user.id, :name => user.firstname, :time => 0)
                 end
                 by_id[user.id].time = by_id[user.id].time + teo.time_entry.hours
             end
