@@ -13,24 +13,26 @@
         </p>
     <% end %>
 
-    <% @issues_by_group.each do |group_id, group_struct| %>
-        <% ppms_group = group_struct.group %>
-        <% issue_ids = group_struct.issues.keys.sort.reverse %>
+    <table class="ppms_report" style="width: 100%">
+        <thead>
+            <th><%= l(:ppms_mailer_label_issue) %></th>
+            <th><%= l(:ppms_mailer_label_experiment) %></th>
+            <th><%= l(:ppms_mailer_label_researcher) %></th>
+            <th><%= l(:ppms_mailer_label_order) %></th>
+            <th><%= l(:ppms_mailer_label_time) %></th>
+            <th><%= l(:ppms_mailer_label_rate) %></th>
+            <th><%= l(:ppms_mailer_label_cost) %></th>
+            <th><%= l(:ppms_mailer_label_time) %></th>
+        </thead>
+        <tbody>
+            <% @issues_by_group.each do |group_id, group_struct| %>
+                <% ppms_group = group_struct.group %>
+                <% issue_ids = group_struct.issues.keys.sort.reverse %>
 
-        <h3><%= ppms_group['unitname'] %></h3>
+                <tr class="group_separator">
+                    <td colspan="8" class="group_separator"><%= ppms_group['unitname'] %></td>
+                </tr>
 
-        <table class="ppms_report" style="width: 100%">
-            <thead>
-                <th><%= l(:ppms_mailer_label_issue) %></th>
-                <th><%= l(:ppms_mailer_label_experiment) %></th>
-                <th><%= l(:ppms_mailer_label_researcher) %></th>
-                <th><%= l(:ppms_mailer_label_order) %></th>
-                <th><%= l(:ppms_mailer_label_time) %></th>
-                <th><%= l(:ppms_mailer_label_rate) %></th>
-                <th><%= l(:ppms_mailer_label_cost) %></th>
-                <th><%= l(:ppms_mailer_label_time) %></th>
-            </thead>
-            <tbody>
                 <% issue_ids.each do |issue_id| %>
                     <% issue = group_struct.issues[issue_id] %>
                     <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
@@ -54,11 +56,11 @@
                         </tr>
                     <% end %>
                 <% end %>
-            </tbody>
-        </table>
+            <% end %>
+        </tbody>
+    </table>
 
-        <br/>
-    <% end %>
+    <br/>
 
     <hr/>
 
