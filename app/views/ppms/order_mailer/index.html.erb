@@ -26,6 +26,7 @@
                 <th><%= l(:ppms_mailer_label_researcher) %></th>
                 <th><%= l(:ppms_mailer_label_order) %></th>
                 <th><%= l(:ppms_mailer_label_time) %></th>
+                <th><%= l(:ppms_mailer_label_rate) %></th>
                 <th><%= l(:ppms_mailer_label_cost) %></th>
                 <th><%= l(:ppms_mailer_label_time) %></th>
             </thead>
@@ -37,14 +38,14 @@
 
                     <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
                         <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
-                        <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
                         <tr>
                             <td><abbr title="<%= issue.subject %>"><a href="/issues/<%= issue.id %>"><%= issue.id %></a></abbr></td>
                             <td><%= experiment_type %></td>
                             <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
                             <td><a href="<%= ppms_url(order_id) %>" target="_blank"><%= order_id %></a></td>
-                            <td><%= hours_minutes(total_time) %></td>
-                            <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
+                            <td><%= hours_minutes(ppms_order['Units']) %></td>
+                            <td>&pound;<%= '%.2f' % ppms_order['Rate'] %></td>
+                            <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
                             <td>
                                 <% time_orders.each do |entry| %>
                                     <%= hours_minutes(entry.time_entry.hours) %> <%= entry.time_entry.user.firstname %><br />
@@ -70,6 +71,7 @@
             <th><%= l(:ppms_mailer_label_issue) %></th>
             <th><%= l(:ppms_mailer_label_date) %></th>
             <th><%= l(:ppms_mailer_label_time) %></th>
+            <th><%= l(:ppms_mailer_label_rate) %></th>
             <th><%= l(:ppms_mailer_label_activity) %></th>
             <th><%= l(:ppms_mailer_label_cost) %></th>
         </thead>
@@ -83,6 +85,7 @@
                         <td><abbr title="<%= time_order.issue.subject %>"><a href="/issues/<%= time_order.issue.id %>"><%= time_order.issue.id %></a></abbr></td>
                         <td><%= time_order.time_entry.spent_on.strftime('%d/%m') %></td>,
                         <td><%= hours_minutes(time_order.time_entry.hours) %></td>
+                        <td>&pound;<%= '%.2f' % orders[time_order.order_id]['Rate']%></td>
                         <td><%= time_order.time_entry.activity %></td>
                         <td>&pound;<%= '%.2f' % (orders[time_order.order_id]['Rate'] * time_order.time_entry.hours)%></td>
                     </tr>

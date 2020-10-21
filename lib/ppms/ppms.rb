@@ -321,6 +321,18 @@ module PPMS
       return data
     end
 
+    ##
+    # Get an order by loading from the "getorderlines" PMUAPI call.
+    # For better information on placed orders, use the "getOrderDetail" method of this
+    # class for information on a specific order.
+    #
+    # @param id |string| The order id.
+    #
+    # @param verbose |boolean| Whether to print verbose information during the
+    # PPMS call. Default false.
+    #
+    # @return |Hash| A hash of order id to order details Hash.
+    #
     def getOrder(id,verbose=false)
       req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getorderlines", "orderref" => id)
@@ -530,41 +542,47 @@ module PPMS
     end
     
     ##
-    # Get the invoice report for the given invoice id. This is report 1848, or
-    # "Custom invoice report - current core". It fetches the information from
-    # PPMS and creates a map by order id. Each order will appear no more than
-    # once.
+    # Get the order details for the given order id. This is report 1848, or
+    # "Order details report - current core". 
     #
-    # @param invoice_id |string| The invoice identifier as returned in the rows
-    # from the "getorders" PUMAPI call.
+    # @param order_id |integer| The order id.
     #
     # @param verbose |boolean| Whether to print verbose information during the
     # PPMS call. Default false.
     # 
-    # @return |Hash| A hash of order id (integer) to the invoice detail hash for
-    # that order.
+    # @return |Hash| The report hash. This will be a single entry or nil, as
+    # this report is specific to one order. We add some other fields for convenience:
     #
-    def getInvoicedOrder(invoice_id, verbose = false)
+    # "id": The order reference as an integer.
+    # "Units": Quantity (number of units) as a float.
+    # "Rate": The unit price as a float.
+    # "Cost": The value of the total order as a float.
+    #
+    def getOrderDetail(order_id, verbose = false)
         request = Net::HTTP::Post.new(@api2)
-        request.set_form_data("apikey" => @key, "action" => "Report1848", "format" => "json", "invoiceid" => invoice_id)
+        request.set_form_data("apikey" => @key, "action" => "Report1848", "format" => "json", "orderRef" => order_id)
         result = makeRequest2(request, __method__, verbose)
         return result if result.nil?
 
-        by_order_id = Hash.new
+        order_details = nil
         
         begin
             order_maps = JSON.parse(result.body)
             unless order_maps.nil?
-                order_maps.each do |order|
-                    order_id = order['Ref (session/order)'].to_i
-                    by_order_id[order_id] = order
-                end
+                $ppmslog.warn("Have #{order_maps.length} rows returned from order details report for order #{order_id}") if order_maps.length > 1
+
+                order_details = order_maps[0] if order_maps.length > 0
+                
+                order_details['id'] = order_details['Order Ref'].to_i
+                order_details['Units'] = order_details['Quantity'].to_f
+                order_details['Rate'] = order_details['Unit Price'].to_f
+                order_details['Cost'] = order_details['Final amount'].to_f
             end
         rescue JSON::ParserError => error
-            $ppmslog.error("Failed to retrieve orders for invoice #{invoice_id}: #{error.message}")
+            $ppmslog.error("Failed to retrieve order details for order #{order_id}: #{error.message}")
         end
         
-        return by_order_id
+        return order_details
     end
   end
 end

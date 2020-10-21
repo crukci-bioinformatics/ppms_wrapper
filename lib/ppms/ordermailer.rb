@@ -111,30 +111,15 @@ module PPMS
         # Load an order from PPMS, adding the cost of the order.
         #
         # @param [int] The PPMS order id.
-        # @param [Hash] The PPMS Group information for this order.
         #
         # @return [Hash] The hash from PPMS containing the order information.
         #
-        def getPPMSOrder(ppms_order_id, ppms_group)
+        def getPPMSOrder(ppms_order_id)
 
             ppms_order = nil
 
             begin
-                ppms_order = @ppms.getOrder(ppms_order_id)[ppms_order_id.to_s]
-
-                # Note that the service id we're looking for is the core facility id * 10000 + the service id.
-                # This is handled by PPMS::getFacilityServiceId
-
-                ppms_order['Cost'] = "Unavailable"
-                begin
-                    service_id = @ppms.getFacilityServiceId(ppms_order['ServiceID']).to_s
-                    ppms_order['Rate'] = @ppms.getRate(affiliation: ppms_group['affiliation'], service: service_id)[0].price
-                    ppms_order['Cost'] = ppms_order['Rate'] * ppms_order['Quantity'].to_f
-                rescue PPMS_Error => failure
-                    $ppmslog.error(failure.message)
-                end
-
-                # $ppmslog.debug("PPMS order #{ppms_order_id} is #{ppms_order} and costs #{ppms_order['Cost']}")
+                ppms_order = @ppms.getOrderDetail(ppms_order_id)
             rescue OpenSSL::SSL::SSLError => ssl_error
                 $ppmslog.warn("Error fetching order #{ppms_order_id}: #{ssl_error}")
             rescue Net::OpenTimeout => timeout
@@ -144,53 +129,6 @@ module PPMS
             return ppms_order
         end
         
-        ##
-        # Add detail to a collection of PPMS orders by getting the invoice ids listed amongst
-        # the orders out, fetching the details as returned by the "Custom invoice report - current core"
-        # PPMS report and adding that detail to each order given. Adds this information as
-        # "InvoiceDetail" to the PPMS order hash.
-        #
-        # @param |Array] ppms_orders An array of PPMS order hash objects.
-        #
-        def addInvoiceDetail(ppms_orders)
-            invoice_ids = ppms_orders.map{ |order| order['Invoiced'] }.uniq
-            
-            # For each unique invoice id, get the orders in that invoice from report 1848.
-                
-            details_by_order_id = Hash.new
-            invoice_ids.each do |invoice_id|
-                if !invoice_id.nil? and !invoice_id.empty?
-                    invoice_details = @ppms.getInvoicedOrder(invoice_id)
-                    details_by_order_id.update(invoice_details) unless invoice_details.nil?
-                end
-            end
-            
-            # Add the invoice information for the order if it is available. Also update the
-            # rate and cost.
-            
-            ppms_orders.each do |ppms_order|
-                order_id = ppms_order['Order ref.'].to_i
-                invoice = details_by_order_id[order_id]
-                ppms_order['InvoiceDetail'] = invoice
-                    
-                unless invoice.nil?
-                    final_amount = invoice['Final amount'].to_f
-                    quantity = invoice['Duration (minutes booked)/Quantity'].to_f
-                        
-                    ppms_order['Cost'] = final_amount
-
-                    if quantity >= 0.001
-                        # To prevent divide by zero. Otherwise leave as it is.
-                        ppms_order['Rate'] = final_amount / quantity
-                    end
-                    
-                    #$ppmslog.info("Added invoice detail to order #{order_id}: #{ppms_order}")
-                else
-                    $ppmslog.warn("The is no invoice detail for order #{order_id}.")
-                end
-            end
-        end
-
         ##
         # Fetch unnotified time order entries and assemble them by group.
         #
@@ -237,7 +175,7 @@ module PPMS
 
                 order_ids.each do |order_id|
                     if group_struct.orders[order_id].nil?
-                        ppms_order = getPPMSOrder(order_id, ppms_group)
+                        ppms_order = getPPMSOrder(order_id)
                         group_struct.orders[order_id] = ppms_order
                     end
                 end
@@ -252,13 +190,6 @@ module PPMS
                 end
             end
             
-            # Add the invoice details to the orders.
-            
-            combined_orders = Hash.new
-            issues_by_group.values.each { |group_struct| combined_orders.update(group_struct.orders) }
-                
-            addInvoiceDetail(combined_orders.values)
-
             return issues_by_group
         end
 

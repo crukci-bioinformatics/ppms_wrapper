@@ -34,7 +34,6 @@ table.ppms_report td
 
 <p>
     Hover over the issue number for its description.
-    <!-- Individual time entries are given in the attached CSV file. -->
 </p>
 
 <table class="ppms_report" style="width: 100%">
@@ -56,7 +55,6 @@ table.ppms_report td
 
             <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
                 <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
-                <% total_time = time_orders.inject(0.0) { |sum, teo| sum + teo.time_entry.hours } %>
 
                 <tr>
                     <% if issue_title == issue_title_s %>
@@ -65,8 +63,8 @@ table.ppms_report td
                         <td><abbr title="<%= issue.subject %>"><%= issue_title_s %></abbr></td>
                     <% end %>
                     <td><%= researcher %></td>
-                    <td><%= my_hours_minutes(total_time) %></td>
-                    <td>&pound;<%= '%.2f' % ppms_order['Cost'].to_f %></td>
+                    <td><%= my_hours_minutes(ppms_order['Units']) %></td>
+                    <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
                     <td><%= contributors(time_orders).join('<br/>') %></td>
                 </tr>
             <% end %>

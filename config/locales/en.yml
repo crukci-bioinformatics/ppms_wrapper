@@ -88,5 +88,6 @@ en:
   ppms_mailer_label_date: "Date"
   ppms_mailer_label_time: "Time"
   ppms_mailer_label_cost: "Cost"
+  ppms_mailer_label_rate: "Rate"
   ppms_mailer_label_logger: "Logged By"
   ppms_mailer_label_activity: "Activity"
