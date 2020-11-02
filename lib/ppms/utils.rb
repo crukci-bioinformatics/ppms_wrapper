@@ -2,6 +2,8 @@ module PPMS
   module Utilities
 
     def semiString2List(s)
+      return [] if s.blank?
+
       s.split(';').map{ |t| t.strip }.select{|t| t.length > 0}
     end
 
