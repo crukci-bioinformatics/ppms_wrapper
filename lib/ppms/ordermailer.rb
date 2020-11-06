@@ -11,7 +11,7 @@ module PPMS
         include Utilities
         include ActionView::Helpers::TextHelper
         
-        @@testing_recipient = "richard.bowers@cruk.cam.ac.uk"
+        @@testing_recipient = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk" ]
         @@production_bcc = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk", "gordon.brown@cruk.cam.ac.uk" ]
 
         @@irrelevant_date = DateTime.new(1974, 9, 19, 18, 0, 0, '+1')
@@ -80,7 +80,7 @@ module PPMS
         # Search PPMS to get the PPMS group that is relevant to the given Redmine
         # projects.
         #
-        # @param [Array of project] projects The projects to get the groups for.
+        # @param [Array] projects The projects to get the groups for.
         #
         # @return [Hash] A hash of Redmine project id to the Hash from PPMS of group information.
         #
@@ -159,34 +159,38 @@ module PPMS
             time_orders_by_issue.each do |issue_id, time_order_entries|
                 issue = issues[issue_id]
                 ppms_group = ppms_groups_by_project_id[issue.project.id]
-                group_id = ppms_group["unitlogin"]
-
-                group_struct = issues_by_group[group_id]
-                if group_struct.nil?
-                    group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new,
-                                                  :orders => Hash.new, :orders_by_issue => Hash.new)
-                    issues_by_group[group_id] = group_struct
-                end
-
-                group_struct.issues[issue_id] = issue
-                group_struct.time_entries[issue_id] = time_order_entries
-
-                order_ids = time_order_entries.map { |time_order| time_order.order_id }.uniq
-
-                order_ids.each do |order_id|
-                    if group_struct.orders[order_id].nil?
-                        ppms_order = getPPMSOrder(order_id)
-                        group_struct.orders[order_id] = ppms_order
+                if ppms_group.nil?
+                    $ppmslog.warn("There is no PPMS group for the project #{issue.project}. Cannot mail for issue ##{issue.id}.")
+                else
+                    group_id = ppms_group["unitlogin"]
+    
+                    group_struct = issues_by_group[group_id]
+                    if group_struct.nil?
+                        group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new,
+                                                      :orders => Hash.new, :orders_by_issue => Hash.new)
+                        issues_by_group[group_id] = group_struct
                     end
-                end
-
-                flat_time_orders.each do |time_order|
-                    issue_id = time_order.issue.id
-                    order_id = time_order.order_id
-                    if group_struct.orders_by_issue[issue_id].nil?
-                        group_struct.orders_by_issue[issue_id] = Hash.new
+    
+                    group_struct.issues[issue_id] = issue
+                    group_struct.time_entries[issue_id] = time_order_entries
+    
+                    order_ids = time_order_entries.map { |time_order| time_order.order_id }.uniq
+    
+                    order_ids.each do |order_id|
+                        if group_struct.orders[order_id].nil?
+                            ppms_order = getPPMSOrder(order_id)
+                            group_struct.orders[order_id] = ppms_order
+                        end
                     end
-                    group_struct.orders_by_issue[issue_id][order_id] = group_struct.orders[order_id]
+    
+                    flat_time_orders.each do |time_order|
+                        issue_id = time_order.issue.id
+                        order_id = time_order.order_id
+                        if group_struct.orders_by_issue[issue_id].nil?
+                            group_struct.orders_by_issue[issue_id] = Hash.new
+                        end
+                        group_struct.orders_by_issue[issue_id][order_id] = group_struct.orders[order_id]
+                    end
                 end
             end
             
