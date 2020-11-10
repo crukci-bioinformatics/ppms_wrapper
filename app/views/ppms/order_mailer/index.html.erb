@@ -16,13 +16,14 @@
     <table class="ppms_report" style="width: 100%">
         <thead>
             <th><%= l(:ppms_mailer_label_issue) %></th>
+            <th><%= l(:ppms_mailer_label_description) %></th>
             <th><%= l(:ppms_mailer_label_experiment) %></th>
             <th><%= l(:ppms_mailer_label_researcher) %></th>
             <th><%= l(:ppms_mailer_label_order) %></th>
             <th><%= l(:ppms_mailer_label_time) %></th>
             <th><%= l(:ppms_mailer_label_rate) %></th>
             <th><%= l(:ppms_mailer_label_cost) %></th>
-            <th><%= l(:ppms_mailer_label_time) %></th>
+            <th><%= l(:ppms_mailer_label_logger) %></th>
         </thead>
         <tbody>
             <% @issues_by_group.each do |group_id, group_struct| %>
@@ -35,27 +36,37 @@
 
                 <% issue_ids.each do |issue_id| %>
                     <% issue = group_struct.issues[issue_id] %>
+                    <% issue_title_s = truncate(issue.subject, :length => @max_subject_length, :separator => ' ') %>
                     <% experiment_type = issue.custom_values.select { |cv| cv.custom_field_id == @experiment_type_field.id }.first&.value %>
                     <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == @researcher_field.id }.first&.value %>
 
                     <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
                         <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
                         <tr>
-                            <td><abbr title="<%= issue.subject %>"><a href="/issues/<%= issue.id %>"><%= issue.id %></a></abbr></td>
+                            <td><a href="/issues/<%= issue.id %>"><%= issue.id %></a></td>
+                            <% if issue.subject == issue_title_s %>
+                                <td><%= issue.subject %></td>
+                            <% else %>
+                                <td><abbr title="<%= issue.subject %>"><%= issue_title_s %></abbr></td>
+                            <% end %>
                             <td><%= experiment_type %></td>
-                            <td><abbr title="<%= issue.project.name %>"><%= researcher %></abbr></td>
+                            <td><%= researcher %></td>
                             <td><a href="<%= ppms_url(order_id) %>" target="_blank"><%= order_id %></a></td>
                             <td><%= hours_minutes(ppms_order['Units']) %></td>
                             <td>&pound;<%= '%.2f' % ppms_order['Rate'] %></td>
                             <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
-                            <td>
-                                <% time_orders.each do |entry| %>
-                                    <%= hours_minutes(entry.time_entry.hours) %> <%= entry.time_entry.user.firstname %><br />
-                                <% end %>
-                            </td>
+                            <td><%= raw contributors(time_orders).join('<br/>') %></td>
                         </tr>
                     <% end %>
                 <% end %>
+
+                <tr class="totals_row">
+                    <td colspan="5">&nbsp;</td>
+                    <td><%= hours_minutes(group_struct.total_time) %></td>
+                    <td>&nbsp;</td>
+                    <td>&pound;<%= '%.2f' % group_struct.total_cost %></td>
+                    <td>&nbsp;</td>
+                </tr>
             <% end %>
         </tbody>
     </table>
@@ -68,14 +79,16 @@
 
     <table class="ppms_report">
         <thead>
-            <th><%= l(:ppms_mailer_label_order) %></th>
-            <th><%= l(:ppms_mailer_label_logger) %></th>
-            <th><%= l(:ppms_mailer_label_issue) %></th>
-            <th><%= l(:ppms_mailer_label_date) %></th>
-            <th><%= l(:ppms_mailer_label_time) %></th>
-            <th><%= l(:ppms_mailer_label_rate) %></th>
-            <th><%= l(:ppms_mailer_label_activity) %></th>
-            <th><%= l(:ppms_mailer_label_cost) %></th>
+            <tr>
+                <th><%= l(:ppms_mailer_label_order) %></th>
+                <th><%= l(:ppms_mailer_label_logger) %></th>
+                <th><%= l(:ppms_mailer_label_issue) %></th>
+                <th><%= l(:ppms_mailer_label_date) %></th>
+                <th><%= l(:ppms_mailer_label_time) %></th>
+                <th><%= l(:ppms_mailer_label_rate) %></th>
+                <th><%= l(:ppms_mailer_label_activity) %></th>
+                <th><%= l(:ppms_mailer_label_cost) %></th>
+            </tr>
         </thead>
         <tbody>
             <% @issues_by_group.values.each do |group_struct| %>

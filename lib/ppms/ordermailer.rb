@@ -10,9 +10,9 @@ module PPMS
 
         include Utilities
         include ActionView::Helpers::TextHelper
-        
-        @@testing_recipient = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk" ]
-        @@production_bcc = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk", "gordon.brown@cruk.cam.ac.uk" ]
+
+        @@testing_recipient = [ "richard.bowers@cruk.cam.ac.uk" ]
+        @@production_bcc = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk" ]
 
         @@irrelevant_date = DateTime.new(1974, 9, 19, 18, 0, 0, '+1')
 
@@ -128,7 +128,7 @@ module PPMS
 
             return ppms_order
         end
-        
+
         ##
         # Fetch unnotified time order entries and assemble them by group.
         #
@@ -139,6 +139,8 @@ module PPMS
         # "time_entries" - a hash of issue id to array of time order entries (as returned from assembleTimeOrderEntries);
         # "orders" - a hash of PPMS order id to PPMS order hash.
         # "orders_by_issue" - a hash of Redmine issue id to an array of orders for that issue.
+        # "total_time" - the sum of quantities for all orders for the group.
+        # "total_cost" - the sum of costs for all orders for the group.
         #
         def assembleOrdersToGroups()
 
@@ -163,26 +165,29 @@ module PPMS
                     $ppmslog.warn("There is no PPMS group for the project #{issue.project}. Cannot mail for issue ##{issue.id}.")
                 else
                     group_id = ppms_group["unitlogin"]
-    
+
                     group_struct = issues_by_group[group_id]
                     if group_struct.nil?
                         group_struct = OpenStruct.new(:group => ppms_group, :issues => Hash.new, :time_entries => Hash.new,
-                                                      :orders => Hash.new, :orders_by_issue => Hash.new)
+                                                      :orders => Hash.new, :orders_by_issue => Hash.new,
+                                                      :total_time => 0.0, :total_cost => 0.0)
                         issues_by_group[group_id] = group_struct
                     end
-    
+
                     group_struct.issues[issue_id] = issue
                     group_struct.time_entries[issue_id] = time_order_entries
-    
+
                     order_ids = time_order_entries.map { |time_order| time_order.order_id }.uniq
-    
+
                     order_ids.each do |order_id|
                         if group_struct.orders[order_id].nil?
                             ppms_order = getPPMSOrder(order_id)
                             group_struct.orders[order_id] = ppms_order
+                            group_struct.total_time = group_struct.total_time + ppms_order['Quantity'].to_f
+                            group_struct.total_cost = group_struct.total_cost + ppms_order['Cost'].to_f
                         end
                     end
-    
+
                     flat_time_orders.each do |time_order|
                         issue_id = time_order.issue.id
                         order_id = time_order.order_id
@@ -193,7 +198,7 @@ module PPMS
                     end
                 end
             end
-            
+
             return issues_by_group
         end
 
@@ -267,6 +272,32 @@ module PPMS
             TimeEntryOrder.joins(time_entry: :project).where(mailed_at: nil).where.not(projects: {id: mailing_project_ids }).update_all(mailed_at: @@irrelevant_date)
         end
 
+        ##
+        # Helper for the outgoing email "contributors" column. Takes the time entry
+        # orders given and assigns a total for each user who has contributed. It then
+        # sorts those users into descending time logged, and returns their names in
+        # that order.
+        #
+        # @param time_entry_orders |Array| An array of TimeEntryOrder objects.
+        #
+        # @return |Array| A list of user names who have contributed to the given time
+        # entries.
+        #
+        def self.contributors(time_entry_orders)
+            by_id = Hash.new
+            time_entry_orders.each do |teo|
+                user = teo.time_entry.user
+                if by_id[user.id].nil?
+                    by_id[user.id] = OpenStruct.new(:id => user.id, :name => user.firstname, :time => 0)
+                end
+                by_id[user.id].time = by_id[user.id].time + teo.time_entry.hours
+            end
+
+            by_time = by_id.values.sort_by { |s| -s.time }
+
+            return by_time.map { |s| ERB::Util.html_escape(s.name) }
+        end
+
 
         private
 
@@ -279,6 +310,19 @@ module PPMS
         #
         def my_hours_minutes(time)
             return OrderMailer::hours_minutes(time)
+        end
+
+        ##
+        # Instance version of contributors, which allows it to be used in the
+        # binding for creating the email body.
+        #
+        # @param time_entry_orders |Array| An array of TimeEntryOrder objects.
+        #
+        # @return |Array| A list of user names who have contributed to the given time
+        # entries.
+        #
+        def my_contributors(time_entry_orders)
+            return OrderMailer::contributors(time_entry_orders)
         end
 
         ##
@@ -302,32 +346,6 @@ module PPMS
             end
 
             return group
-        end
-        
-        ##
-        # Helper for the outgoing email "contributors" column. Takes the time entry
-        # orders given and assigns a total for each user who has contributed. It then
-        # sorts those users into descending time logged, and returns their names in
-        # that order.
-        #
-        # @param time_entry_orders |Array| An array of TimeEntryOrder objects.
-        #
-        # @return |Array| A list of user names who have contributed to the given time
-        # entries.
-        #
-        def contributors(time_entry_orders)
-            by_id = Hash.new
-            time_entry_orders.each do |teo|
-                user = teo.time_entry.user
-                if by_id[user.id].nil?
-                    by_id[user.id] = OpenStruct.new(:id => user.id, :name => user.firstname, :time => 0)
-                end
-                by_id[user.id].time = by_id[user.id].time + teo.time_entry.hours
-            end
-            
-            by_time = by_id.values.sort_by { |s| -s.time }
-            
-            return by_time.map { |s| s.name }
         end
 
         ##

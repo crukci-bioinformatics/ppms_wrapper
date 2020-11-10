@@ -23,3 +23,8 @@ table.ppms_report td.group_separator
     font-size: large;
     background: white;
 }
+
+table.ppms_report tr.totals_row
+{
+    font-weight: bold;
+}

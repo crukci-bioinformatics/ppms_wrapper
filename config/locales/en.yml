@@ -82,6 +82,7 @@ en:
   ppms_mailer_failure_reasons: "Failures may be due to address problems or issues with the Redmine mail set up."
 
   ppms_mailer_label_issue: "Issue"
+  ppms_mailer_label_description: "Description"
   ppms_mailer_label_experiment: "Experiment Type"
   ppms_mailer_label_researcher: "Researcher"
   ppms_mailer_label_order: "PPMS Order"
