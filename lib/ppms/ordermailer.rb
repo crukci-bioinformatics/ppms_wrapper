@@ -11,7 +11,7 @@ module PPMS
         include Utilities
         include ActionView::Helpers::TextHelper
 
-        @@testing_recipient = [ "richard.bowers@cruk.cam.ac.uk" ]
+        @@testing_recipient = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk" ]
         @@production_bcc = [ "richard.bowers@cruk.cam.ac.uk", "matthew.eldridge@cruk.cam.ac.uk" ]
 
         @@irrelevant_date = DateTime.new(1974, 9, 19, 18, 0, 0, '+1')

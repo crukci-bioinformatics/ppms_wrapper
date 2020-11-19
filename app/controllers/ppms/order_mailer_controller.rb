@@ -16,6 +16,7 @@ class Ppms::OrderMailerController < ApplicationController
         mailer = PPMS::OrderMailer.new
         @issues_by_group = mailer.assembleOrdersToGroups
         @max_subject_length = 45
+        @root_not_set = Setting.plugin_ppms['mailing_root'].blank?
     end
 
     def create

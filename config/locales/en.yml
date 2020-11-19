@@ -73,6 +73,8 @@ en:
   ppms_mailer_title: "Time Orders Awaiting Notification"
   ppms_mailer_send_button: "Send these summaries to group leaders"
   ppms_mailer_no_orders: "There are no outstanding orders to mail."
+  ppms_mailer_no_root_set_1: "\"Mailing root\" has not been set in the PPMS plugin configuration."
+  ppms_mailer_no_root_set_2: "This might be why there are no orders to mail."
   ppms_mailer_raw_data: "Raw Time Entries"
   ppms_mailer_messages_none: "No messages were sent."
   ppms_mailer_messages_success_one: "Sent 1 summary email to:"

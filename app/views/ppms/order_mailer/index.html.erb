@@ -6,6 +6,12 @@
 
 <% if @issues_by_group.empty? %>
     <p><%= l(:ppms_mailer_no_orders) %></p>
+    <% if @root_not_set %>
+        <p>
+            <a href="/settings/plugin/ppms"><%= l(:ppms_mailer_no_root_set_1) %></a>
+            <%= l(:ppms_mailer_no_root_set_2) %>
+        </p>
+    <% end %>
 <% else %>
     <%= form_tag '/ppms/order_mailer' do %>
         <p>
