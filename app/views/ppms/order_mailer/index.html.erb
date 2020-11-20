@@ -26,6 +26,7 @@
             <th><%= l(:ppms_mailer_label_experiment) %></th>
             <th><%= l(:ppms_mailer_label_researcher) %></th>
             <th><%= l(:ppms_mailer_label_order) %></th>
+            <th><%= l(:ppms_mailer_label_cost_code) %></th>
             <th><%= l(:ppms_mailer_label_time) %></th>
             <th><%= l(:ppms_mailer_label_rate) %></th>
             <th><%= l(:ppms_mailer_label_cost) %></th>
@@ -58,6 +59,7 @@
                             <td><%= experiment_type %></td>
                             <td><%= researcher %></td>
                             <td><a href="<%= ppms_url(order_id) %>" target="_blank"><%= order_id %></a></td>
+                            <td><%= ppms_order['Account number'] %></td>
                             <td><%= hours_minutes(ppms_order['Units']) %></td>
                             <td>&pound;<%= '%.2f' % ppms_order['Rate'] %></td>
                             <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
@@ -67,7 +69,7 @@
                 <% end %>
 
                 <tr class="totals_row">
-                    <td colspan="5">&nbsp;</td>
+                    <td colspan="6">&nbsp;</td>
                     <td><%= hours_minutes(group_struct.total_time) %></td>
                     <td>&nbsp;</td>
                     <td>&pound;<%= '%.2f' % group_struct.total_cost %></td>

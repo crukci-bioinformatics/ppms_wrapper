@@ -88,6 +88,7 @@ en:
   ppms_mailer_label_experiment: "Experiment Type"
   ppms_mailer_label_researcher: "Researcher"
   ppms_mailer_label_order: "PPMS Order"
+  ppms_mailer_label_cost_code: "Cost Code"
   ppms_mailer_label_date: "Date"
   ppms_mailer_label_time: "Time"
   ppms_mailer_label_cost: "Cost"

@@ -58,6 +58,7 @@ table.ppms_report td.total
         <tr class="header_row">
             <th>Bioinformatics project/task</th>
             <th>Researcher</th>
+            <th>Cost code</th>
             <th>Time</th>
             <th>Cost</th>
             <th>Contributors</th>
@@ -80,6 +81,7 @@ table.ppms_report td.total
                         <td><abbr title="<%= issue.subject %>"><%= issue_title_s %></abbr></td>
                     <% end %>
                     <td><%= researcher %></td>
+                    <td><%= ppms_order['Account number'] %></td>
                     <td><%= my_hours_minutes(ppms_order['Units']) %></td>
                     <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
                     <td><%= raw my_contributors(time_orders).join('<br/>') %></td>
@@ -88,7 +90,7 @@ table.ppms_report td.total
         <% end %>
 
         <tr class="totals_row">
-            <td class="total" colspan="2">Total</td>
+            <td class="total" colspan="3">Total</td>
             <td class="total"><%= my_hours_minutes(group_struct.total_time) %></td>
             <td class="total">&pound;<%= '%.2f' % group_struct.total_cost %></td>
             <td class="total">&nbsp;</td>
