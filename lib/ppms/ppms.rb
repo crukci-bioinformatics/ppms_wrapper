@@ -15,7 +15,7 @@ module PPMS
   class PPMS
     include ::I18n
     
-    @@serviceID = 7
+    @@coreFacilityID = 7
     @@affiliation2id = {'CRUK' => 1,
                         'Charity' => 2,
                         'RC / UKGov' => 5,
@@ -261,7 +261,7 @@ module PPMS
       end
       return data
     end
-
+    
     def issue2User(iss,verbose=false)
       email = iss.researcher
       user = nil
@@ -321,6 +321,18 @@ module PPMS
       return data
     end
 
+    ##
+    # Get an order by loading from the "getorderlines" PMUAPI call.
+    # For better information on placed orders, use the "getOrderDetail" method of this
+    # class for information on a specific order.
+    #
+    # @param id |string| The order id.
+    #
+    # @param verbose |boolean| Whether to print verbose information during the
+    # PPMS call. Default false.
+    #
+    # @return |Hash| A hash of order id to order details Hash.
+    #
     def getOrder(id,verbose=false)
       req = Net::HTTP::Post.new(@pmuapi)
       req.set_form_data("apikey" => @key, "action" => "getorderlines", "orderref" => id)
@@ -379,7 +391,7 @@ module PPMS
       @prices = Array.new()
       rows[1..rows.length-1].each do |row|
         @prices << OpenStruct.new(:priority => row[prioCol].to_i,
-                                  :service => (row[serviceCol].to_i + @@serviceID * 10**4).to_s,
+                                  :service => getFacilityServiceId(row[serviceCol]).to_s,
                                   :affiliation => row[affCol].to_i,
                                   :project => row[projCol].to_i,
                                   :price => row[priceCol].to_f)
@@ -402,7 +414,7 @@ module PPMS
           data.each do |row|
             rowDat = OpenStruct.new(
                            :priority => row["priority"],
-                           :service => (row["service"].to_i + @@serviceID * 10**4).to_s,
+                           :service => getFacilityServiceId(row["service"]).to_s,
                            :affiliation => row["affiliationid"],
                            :project => row["projectid"],
                            :price => row["price"],
@@ -516,5 +528,61 @@ module PPMS
       return affId
     end
 
+    ##
+    # The service id returned in, for example, getPrices is:
+    # core facility id * 10000 + service id
+    #
+    # Some cases will need to convert the returned integer into a string
+    # for matching.
+    #
+    # @return [int] The service id within our core facility.
+    #
+    def getFacilityServiceId(service_id)
+        return service_id.to_i + @@coreFacilityID * 10000 
+    end
+    
+    ##
+    # Get the order details for the given order id. This is report 1848, or
+    # "Order details report - current core". 
+    #
+    # @param order_id |integer| The order id.
+    #
+    # @param verbose |boolean| Whether to print verbose information during the
+    # PPMS call. Default false.
+    # 
+    # @return |Hash| The report hash. This will be a single entry or nil, as
+    # this report is specific to one order. We add some other fields for convenience:
+    #
+    # "id": The order reference as an integer.
+    # "Units": Quantity (number of units) as a float.
+    # "Rate": The unit price as a float.
+    # "Cost": The value of the total order as a float.
+    #
+    def getOrderDetail(order_id, verbose = false)
+        request = Net::HTTP::Post.new(@api2)
+        request.set_form_data("apikey" => @key, "action" => "Report1848", "format" => "json", "orderRef" => order_id)
+        result = makeRequest2(request, __method__, verbose)
+        return result if result.nil?
+
+        order_details = nil
+        
+        begin
+            order_maps = JSON.parse(result.body)
+            unless order_maps.nil?
+                $ppmslog.warn("Have #{order_maps.length} rows returned from order details report for order #{order_id}") if order_maps.length > 1
+
+                order_details = order_maps[0] if order_maps.length > 0
+                
+                order_details['id'] = order_details['Order Ref'].to_i
+                order_details['Units'] = order_details['Quantity'].to_f
+                order_details['Rate'] = order_details['Unit Price'].to_f
+                order_details['Cost'] = order_details['Final amount'].to_f
+            end
+        rescue JSON::ParserError => error
+            $ppmslog.error("Failed to retrieve order details for order #{order_id}: #{error.message}")
+        end
+        
+        return order_details
+    end
   end
 end

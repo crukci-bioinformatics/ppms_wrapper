@@ -1,0 +1,99 @@
+<% ppms_group = group_struct.group %>
+<% issue_ids = group_struct.issues.keys.sort.reverse %>
+<% max_subject_length = 32 %>
+
+<style>
+table.ppms_report
+{
+    border: none;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.ppms_report th
+{
+    text-align: left;
+    font-weight: bold;
+    font-size: 90%;
+    padding: 2px 4px 2px 4px;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table.ppms_report tr.header_row
+{
+    border-bottom: 3px double black;
+    font-weight: bold;
+}
+
+table.ppms_report td
+{
+    text-align: left;
+    font-weight: normal;
+    padding: 2px 4px 2px 4px;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table.ppms_report tr.totals_row
+{
+    border-top: 3px double black;
+    font-weight: bold;
+}
+
+table.ppms_report td.total
+{
+    font-weight: bold;
+}
+</style>
+
+<h2>Bioinformatics Core Charges for <%= ppms_group['unitname'] %></h2>
+
+<p>
+    Longer project/task descriptions may appear truncated. Please hover over the descriptions to see them in full.
+</p>
+
+<table class="ppms_report" style="width: 100%">
+    <thead>
+        <tr class="header_row">
+            <th>Bioinformatics project/task</th>
+            <th>Researcher</th>
+            <th>Cost code</th>
+            <th>Time</th>
+            <th>Cost</th>
+            <th>Contributors</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% issue_ids.each do |issue_id| %>
+            <% issue = group_struct.issues[issue_id] %>
+            <% issue_title = "(#{issue.id}) #{issue.subject}" %>
+            <% issue_title_s = truncate(issue_title, :length => max_subject_length, :separator => ' ') %>
+            <% researcher = issue.custom_values.select { |cv| cv.custom_field_id == researcher_field.id }.first&.value %>
+
+            <% group_struct.orders_by_issue[issue.id].each do |order_id, ppms_order| %>
+                <% time_orders = group_struct.time_entries[issue.id].select { |teo| teo.order_id == order_id } %>
+
+                <tr>
+                    <% if issue_title == issue_title_s %>
+                        <td><%= issue_title %></td>
+                    <% else %>
+                        <td><abbr title="<%= issue.subject %>"><%= issue_title_s %></abbr></td>
+                    <% end %>
+                    <td><%= researcher %></td>
+                    <td><%= ppms_order['Account number'] %></td>
+                    <td><%= my_hours_minutes(ppms_order['Units']) %></td>
+                    <td>&pound;<%= '%.2f' % ppms_order['Cost'] %></td>
+                    <td><%= raw my_contributors(time_orders).join('<br/>') %></td>
+                </tr>
+            <% end %>
+        <% end %>
+
+        <tr class="totals_row">
+            <td class="total" colspan="3">Total</td>
+            <td class="total"><%= my_hours_minutes(group_struct.total_time) %></td>
+            <td class="total">&pound;<%= '%.2f' % group_struct.total_cost %></td>
+            <td class="total">&nbsp;</td>
+        </tr>
+    </tbody>
+</table>

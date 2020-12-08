@@ -9,3 +9,22 @@ span.promoted { color: red; }
 p.threshold { color: red; }
 td.threshold { color: red; }
 td.price { text-align: right; }
+
+table.ppms_report tr.group_separator
+{
+    margin: 10px 0 10px 0;
+}
+
+table.ppms_report td.group_separator
+{
+    font-family: Verdana, sans-serif;
+    padding: 2px 10px 1px 0px;
+    font-weight: bold;
+    font-size: large;
+    background: white;
+}
+
+table.ppms_report tr.totals_row
+{
+    font-weight: bold;
+}
