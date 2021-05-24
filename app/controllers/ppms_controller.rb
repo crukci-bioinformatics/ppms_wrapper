@@ -172,28 +172,6 @@ class PpmsController < ApplicationController
     send_data(io.string,filename: fn)
   end
 
-  def time_log_spreadsheet(entries,ppms)
-    allowed = semiString2List(Setting.plugin_ppms['can_commit'])
-    if ! allowed.include?(User.current.login)
-      flash[:error] = "Permission Denied."
-      redirect_to "/ppms/index"
-      return
-    end
-    codename = ppms.getServices().keys[0]
-    io = StringIO.new("","w")
-    io.printf("customer id,billing code,service code,quantity\n")
-    entries.values.each do |ent|
-      result = -1
-      ent[:logs].to_a.each do |id|
-        TimeEntryOrder.create(time_entry_id: id, order_id: result)
-      end
-      quant = ent[:quant].round(2)
-      io.printf("#{ent[:email]},#{ent[:swag]},#{codename},#{quant}\n")
-    end 
-    fn = (l(:ppms_report_title)+"_"+@intervaltitle).gsub(" ","_")+".csv"
-    send_data(io.string,filename: fn)
-  end
-
 
   def show
     # to send to PPMS:
@@ -364,19 +342,9 @@ class PpmsController < ApplicationController
     @bnums = @billed.keys.sort
     @params = params
     if @params['format'] == 'csv'
-      if @params['commit_type'] == 'commit'
-        time_log_commit(@entries,ppms)
-      elsif @params['commit_type'] == 'spreadsheet'
-        time_log_spreadsheet(@entries,ppms)
-      else
-        $ppmslog.error("Unexpected report type: #{@params['commit_type']}")
-        flash[:error] = l(:ppms_report_bad_report_type,:rtype => @params['commit_type'])
-      end
-#      redirect_to "index"
-      return
+      time_log_commit(@entries,ppms)
     else
       render "show"
-      return
     end
   end
 
